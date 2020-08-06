@@ -1,15 +1,15 @@
-# TensorFlow.js Example: Reinforcement Learning with Cart-Pole Simulation
+# TensorFlow.js Example: Reinforcement Learning with Knapsack Simulation
 
-![Cart Pole Demo](./tfjs-cart-pole-demo.png)
+![Cart Pole Demo](./tfjs-knapsack-demo.png)
 
-[See this example live!](https://storage.googleapis.com/tfjs-examples/cart-pole/dist/index.html)
+[See this example live!](https://storage.googleapis.com/tfjs-examples/knapsack/dist/index.html)
 
 ## Overview
 
 This example illustrates how to use TensorFlow.js to perform simple
 reinforcement learning (RL). Specifically, it showcases an implementation
 of the policy-gradient method in TensorFlow.js with a combination of the Layers
-and gradients API. This implementation is used to solve the classic cart-pole
+and gradients API. This implementation is used to solve the classic knapsack
 control problem, which was originally proposed in:
 
 - Barto, Sutton, and Anderson, "Neuronlike Adaptive Elements That Can Solve
@@ -20,7 +20,7 @@ control problem, which was originally proposed in:
   University of Massachusetts, Amherst, 1984.
 
 It later became one of OpenAI's gym environmnets:
-  https://github.com/openai/gym/blob/master/gym/envs/classic_control/cartpole.py
+https://github.com/openai/gym/blob/master/gym/envs/classic_control/cartpole.py
 
 The gist of the RL algorithm in this example (see [index.js](./index.js)) is:
 
@@ -38,17 +38,17 @@ The gist of the RL algorithm in this example (see [index.js](./index.js)) is:
    to the longer-lasting games given the same system states.
 
 For a more detailed overview of policy gradient methods, see:
-  http://www.scholarpedia.org/article/Policy_gradient_methods
+http://www.scholarpedia.org/article/Policy_gradient_methods
 
-For a more graphical illustration of the cart-pole problem, see:
-  http://gym.openai.com/envs/CartPole-v1/
+For a more graphical illustration of the knapsack problem, see:
+http://gym.openai.com/envs/Knapsack-v1/
 
 ### Features:
 
 - Allows user to specify the architecture of the policy network, in particular,
   the number of the neural networks's layers and their sizes (# of units).
 - Allows training of the policy network in the browser, optionally with
-  simultaneous visualization of the cart-pole system.
+  simultaneous visualization of the knapsack system.
 - Allows testing in the browser, with visualization.
 - Allows saving the policy network to the browser's IndexedDB. The saved policy
   network can later be loaded back for testing and/or further training.

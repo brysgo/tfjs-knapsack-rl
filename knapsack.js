@@ -19,10 +19,10 @@
  * Implementation based on: http://incompleteideas.net/book/code/pole.c
  */
 
-import * as tf from '@tensorflow/tfjs';
+import * as tf from "@tensorflow/tfjs";
 
 /**
- * Cart-pole system simulator.
+ * Knapsack system simulator.
  *
  * In the control-theory sense, there are four state variables in this system:
  *
@@ -36,9 +36,9 @@ import * as tf from '@tensorflow/tfjs';
  *
  *   - leftward or rightward force.
  */
-export class CartPole {
+export class Knapsack {
   /**
-   * Constructor of CartPole.
+   * Constructor of Knapsack.
    */
   constructor() {
     // Constants that characterize the system.
@@ -51,28 +51,28 @@ export class CartPole {
     this.length = 0.5;
     this.poleMoment = this.massPole * this.length;
     this.forceMag = 10.0;
-    this.tau = 0.02;  // Seconds between state updates.
+    this.tau = 0.02; // Seconds between state updates.
 
     // Threshold values, beyond which a simulation will be marked as failed.
     this.xThreshold = 2.4;
-    this.thetaThreshold = 12 / 360 * 2 * Math.PI;
+    this.thetaThreshold = (12 / 360) * 2 * Math.PI;
 
     this.setRandomState();
   }
 
   /**
-   * Set the state of the cart-pole system randomly.
+   * Set the state of the knapsack system randomly.
    */
   setRandomState() {
-    // The control-theory state variables of the cart-pole system.
+    // The control-theory state variables of the knapsack system.
     // Cart position, meters.
     this.x = Math.random() - 0.5;
     // Cart velocity.
     this.xDot = (Math.random() - 0.5) * 1;
     // Pole angle, radians.
-    this.theta = (Math.random() - 0.5) * 2 * (6 / 360 * 2 * Math.PI);
+    this.theta = (Math.random() - 0.5) * 2 * ((6 / 360) * 2 * Math.PI);
     // Pole angle velocity.
-    this.thetaDot =  (Math.random() - 0.5) * 0.5;
+    this.thetaDot = (Math.random() - 0.5) * 0.5;
   }
 
   /**
@@ -83,7 +83,7 @@ export class CartPole {
   }
 
   /**
-   * Update the cart-pole system using an action.
+   * Update the knapsack system using an action.
    * @param {number} action Only the sign of `action` matters.
    *   A value > 0 leads to a rightward force of a fixed magnitude.
    *   A value <= 0 leads to a leftward force of the same fixed magnitude.
@@ -95,12 +95,14 @@ export class CartPole {
     const sinTheta = Math.sin(this.theta);
 
     const temp =
-        (force + this.poleMoment * this.thetaDot * this.thetaDot * sinTheta) /
-        this.totalMass;
-    const thetaAcc = (this.gravity * sinTheta - cosTheta * temp) /
-        (this.length *
-         (4 / 3 - this.massPole * cosTheta * cosTheta / this.totalMass));
-    const xAcc = temp - this.poleMoment * thetaAcc * cosTheta / this.totalMass;
+      (force + this.poleMoment * this.thetaDot * this.thetaDot * sinTheta) /
+      this.totalMass;
+    const thetaAcc =
+      (this.gravity * sinTheta - cosTheta * temp) /
+      (this.length *
+        (4 / 3 - (this.massPole * cosTheta * cosTheta) / this.totalMass));
+    const xAcc =
+      temp - (this.poleMoment * thetaAcc * cosTheta) / this.totalMass;
 
     // Update the four state variables, using Euler's metohd.
     this.x += this.tau * this.xDot;
@@ -120,7 +122,11 @@ export class CartPole {
    * @returns {bool} Whether the simulation is done.
    */
   isDone() {
-    return this.x < -this.xThreshold || this.x > this.xThreshold ||
-        this.theta < -this.thetaThreshold || this.theta > this.thetaThreshold;
+    return (
+      this.x < -this.xThreshold ||
+      this.x > this.xThreshold ||
+      this.theta < -this.thetaThreshold ||
+      this.theta > this.thetaThreshold
+    );
   }
 }

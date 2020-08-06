@@ -16,7 +16,7 @@
  */
 
 /**
- * TensorFlow.js Reinforcement Learning Example: Balancing a Cart-Pole System.
+ * TensorFlow.js Reinforcement Learning Example: Balancing a Knapsack System.
  *
  * The simulation, training, testing and visualization parts are written
  * purely in JavaScript and can run in the web browser with WebGL acceleration.
@@ -34,12 +34,12 @@
  *   https://github.com/openai/gym/blob/master/gym/envs/classic_control/cartpole.py
  */
 
-import * as tf from '@tensorflow/tfjs';
+import * as tf from "@tensorflow/tfjs";
 
-import {maybeRenderDuringTraining, onGameEnd, setUpUI} from './ui';
+import { maybeRenderDuringTraining, onGameEnd, setUpUI } from "./ui";
 
 /**
- * Policy network for controlling the cart-pole system.
+ * Policy network for controlling the knapsack system.
  *
  * The role of the policy network is to select an action based on the observed
  * state of the system. In this case, the action is the leftward or rightward
@@ -79,22 +79,24 @@ class PolicyNetwork {
     }
     this.policyNet = tf.sequential();
     hiddenLayerSizes.forEach((hiddenLayerSize, i) => {
-      this.policyNet.add(tf.layers.dense({
-        units: hiddenLayerSize,
-        activation: 'elu',
-        // `inputShape` is required only for the first layer.
-        inputShape: i === 0 ? [4] : undefined
-      }));
+      this.policyNet.add(
+        tf.layers.dense({
+          units: hiddenLayerSize,
+          activation: "elu",
+          // `inputShape` is required only for the first layer.
+          inputShape: i === 0 ? [4] : undefined,
+        })
+      );
     });
     // The last layer has only one unit. The single output number will be
     // converted to a probability of selecting the leftward-force action.
-    this.policyNet.add(tf.layers.dense({units: 1}));
+    this.policyNet.add(tf.layers.dense({ units: 1 }));
   }
 
   /**
    * Train the policy network's model.
    *
-   * @param {CartPole} cartPoleSystem The cart-pole system object to use during
+   * @param {Knapsack} knapsackSystem The knapsack system object to use during
    *   training.
    * @param {tf.train.Optimizer} optimizer An instance of TensorFlow.js
    *   Optimizer to use for training.
@@ -108,15 +110,20 @@ class PolicyNetwork {
    *   in this round of training.
    */
   async train(
-      cartPoleSystem, optimizer, discountRate, numGames, maxStepsPerGame) {
+    knapsackSystem,
+    optimizer,
+    discountRate,
+    numGames,
+    maxStepsPerGame
+  ) {
     const allGradients = [];
     const allRewards = [];
     const gameSteps = [];
     onGameEnd(0, numGames);
     for (let i = 0; i < numGames; ++i) {
-      // Randomly initialize the state of the cart-pole system at the beginning
+      // Randomly initialize the state of the knapsack system at the beginning
       // of every game.
-      cartPoleSystem.setRandomState();
+      knapsackSystem.setRandomState();
       const gameRewards = [];
       const gameGradients = [];
       for (let j = 0; j < maxStepsPerGame; ++j) {
@@ -124,15 +131,15 @@ class PolicyNetwork {
         // network's weights with respect to the probability of the action
         // choice that lead to the reward.
         const gradients = tf.tidy(() => {
-          const inputTensor = cartPoleSystem.getStateTensor();
+          const inputTensor = knapsackSystem.getStateTensor();
           return this.getGradientsAndSaveActions(inputTensor).grads;
         });
 
         this.pushGradients(gameGradients, gradients);
         const action = this.currentActions_[0];
-        const isDone = cartPoleSystem.update(action);
+        const isDone = knapsackSystem.update(action);
 
-        await maybeRenderDuringTraining(cartPoleSystem);
+        await maybeRenderDuringTraining(knapsackSystem);
 
         if (isDone) {
           // When the game ends before max step count is reached, a reward of
@@ -165,27 +172,33 @@ class PolicyNetwork {
       //    long-lasting games positive and rewards from short-lasting
       //    negative.
       // 3. Scale the gradients with the normalized reward values.
-      const normalizedRewards =
-          discountAndNormalizeRewards(allRewards, discountRate);
+      const normalizedRewards = discountAndNormalizeRewards(
+        allRewards,
+        discountRate
+      );
       // Add the scaled gradients to the weights of the policy network. This
       // step makes the policy network more likely to make choices that lead
       // to long-lasting games in the future (i.e., the crux of this RL
       // algorithm.)
       optimizer.applyGradients(
-          scaleAndAverageGradients(allGradients, normalizedRewards));
+        scaleAndAverageGradients(allGradients, normalizedRewards)
+      );
     });
     tf.dispose(allGradients);
     return gameSteps;
   }
 
   getGradientsAndSaveActions(inputTensor) {
-    const f = () => tf.tidy(() => {
-      const [logits, actions] = this.getLogitsAndActions(inputTensor);
-      this.currentActions_ = actions.dataSync();
-      const labels =
-          tf.sub(1, tf.tensor2d(this.currentActions_, actions.shape));
-      return tf.losses.sigmoidCrossEntropy(labels, logits).asScalar();
-    });
+    const f = () =>
+      tf.tidy(() => {
+        const [logits, actions] = this.getLogitsAndActions(inputTensor);
+        this.currentActions_ = actions.dataSync();
+        const labels = tf.sub(
+          1,
+          tf.tensor2d(this.currentActions_, actions.shape)
+        );
+        return tf.losses.sigmoidCrossEntropy(labels, logits).asScalar();
+      });
     return tf.variableGrads(f);
   }
 
@@ -246,7 +259,7 @@ class PolicyNetwork {
 }
 
 // The IndexedDB path where the model of the policy network will be saved.
-const MODEL_SAVE_PATH_ = 'indexeddb://cart-pole-v1';
+const MODEL_SAVE_PATH_ = "indexeddb://knapsack-v1";
 
 /**
  * A subclass of PolicyNetwork that supports saving and loading.
@@ -359,14 +372,14 @@ function discountAndNormalizeRewards(rewardSequences, discountRate) {
   return tf.tidy(() => {
     const discounted = [];
     for (const sequence of rewardSequences) {
-      discounted.push(discountRewards(sequence, discountRate))
+      discounted.push(discountRewards(sequence, discountRate));
     }
     // Compute the overall mean and stddev.
     const concatenated = tf.concat(discounted);
     const mean = tf.mean(concatenated);
     const std = tf.sqrt(tf.mean(tf.square(concatenated.sub(mean))));
     // Normalize the reward sequences using the mean and std.
-    const normalized = discounted.map(rs => rs.sub(mean).div(std));
+    const normalized = discounted.map((rs) => rs.sub(mean).div(std));
     return normalized;
   });
 }
@@ -392,16 +405,18 @@ function scaleAndAverageGradients(allGradients, normalizedRewards) {
     for (const varName in allGradients) {
       gradients[varName] = tf.tidy(() => {
         // Stack gradients together.
-        const varGradients = allGradients[varName].map(
-            varGameGradients => tf.stack(varGameGradients));
+        const varGradients = allGradients[varName].map((varGameGradients) =>
+          tf.stack(varGameGradients)
+        );
         // Expand dimensions of reward tensors to prepare for multiplication
         // with broadcasting.
         const expandedDims = [];
         for (let i = 0; i < varGradients[0].rank - 1; ++i) {
           expandedDims.push(1);
         }
-        const reshapedNormalizedRewards = normalizedRewards.map(
-            rs => rs.reshape(rs.shape.concat(expandedDims)));
+        const reshapedNormalizedRewards = normalizedRewards.map((rs) =>
+          rs.reshape(rs.shape.concat(expandedDims))
+        );
         for (let g = 0; g < varGradients.length; ++g) {
           // This mul() call uses broadcasting.
           varGradients[g] = varGradients[g].mul(reshapedNormalizedRewards[g]);
