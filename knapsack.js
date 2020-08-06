@@ -64,30 +64,38 @@ export class Knapsack {
    * Set the state of the knapsack system randomly.
    */
   setRandomState() {
-    // TODO: define this.itemRange = {min, max}
-    this.budget = Math.random();
-    // TODO: add scaling factors
-    this.allItems = Array.from({
+    // Everything but item length will be normalized
+    // TODO: add scaling factor for length
+    this.items = Array.from({
       length: this.itemRange.min + Math.random() * this.itemRange.max,
     }).map((x, i) => ({
-      value: Math.random(), // TODO: add scaling factors
-      cost: Math.random(), // TODO: add scaling factors
+      value: Math.random(),
+      cost: Math.random(),
+      enclosed: Math.round(Math.random()),
     }));
-    this.enclosedItems = [];
   }
 
   /**
-   * Get current state as a tf.Tensor of shape [1, 4].
-   * [# Items Left, # Items Packed,]
+   * Get current state as a tf.Tensor of shape [2, 2, 3].
+   * [# batches, in/out, left/right, (cost, value, count)]
+   *
+   * *current* is a special case where spacial dimensions become quantities
    */
   getStateTensor() {
-    return tf.tensor2d([
+    return tf.tensor3d([
+      // in
       [
-        this.numItemsRemaining,
-        this.numItemsEnclosed,
-        this.valueEnclosed,
-        this.costEnclosed,
-        this.budgetRemaining,
+        // left
+        [this.costInLeft, this.valueInLeft, this.countInLeft],
+        // right
+        [this.costInRight, this.valueInRight, this.countInRight],
+      ],
+      // out
+      [
+        // left
+        [this.costOutLeft, this.valueOutLeft, this.countOutLeft],
+        // right
+        [this.costOutRight, this.valueOutRight, this.countOutRight],
       ],
     ]);
   }
@@ -102,11 +110,9 @@ export class Knapsack {
     // TODO: figure out how many action states we can have and take actions
     this.numItemsRemaining = this.allItems.length - this.enclosedItems.length;
     this.numItemsEnclosed = this.enclosedItems.length;
-    this.budgetRemaining = this.budget; // start at budget and subtract
     this.valueEnclosed = 0;
     this.costEnclosed = 0;
     this.enclosedItems.forEach((enclosedItem) => {
-      this.budgetRemaining -= enclosedItem.cost;
       this.costEnclosed -= enclosedItem.cost;
       this.valueEnclosed += enclosedItem.value;
     });
