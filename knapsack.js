@@ -64,22 +64,32 @@ export class Knapsack {
    * Set the state of the knapsack system randomly.
    */
   setRandomState() {
-    // The control-theory state variables of the knapsack system.
-    // Cart position, meters.
-    this.x = Math.random() - 0.5;
-    // Cart velocity.
-    this.xDot = (Math.random() - 0.5) * 1;
-    // Pole angle, radians.
-    this.theta = (Math.random() - 0.5) * 2 * ((6 / 360) * 2 * Math.PI);
-    // Pole angle velocity.
-    this.thetaDot = (Math.random() - 0.5) * 0.5;
+    // TODO: define this.itemRange = {min, max}
+    this.budget = Math.random();
+    // TODO: add scaling factors
+    this.allItems = Array.from({
+      length: this.itemRange.min + Math.random() * this.itemRange.max,
+    }).map((x, i) => ({
+      value: Math.random(), // TODO: add scaling factors
+      cost: Math.random(), // TODO: add scaling factors
+    }));
+    this.enclosedItems = [];
   }
 
   /**
    * Get current state as a tf.Tensor of shape [1, 4].
+   * [# Items Left, # Items Packed,]
    */
   getStateTensor() {
-    return tf.tensor2d([[this.x, this.xDot, this.theta, this.thetaDot]]);
+    return tf.tensor2d([
+      [
+        this.numItemsRemaining,
+        this.numItemsEnclosed,
+        this.valueEnclosed,
+        this.costEnclosed,
+        this.budgetRemaining,
+      ],
+    ]);
   }
 
   /**
@@ -89,6 +99,18 @@ export class Knapsack {
    *   A value <= 0 leads to a leftward force of the same fixed magnitude.
    */
   update(action) {
+    // TODO: figure out how many action states we can have and take actions
+    this.numItemsRemaining = this.allItems.length - this.enclosedItems.length;
+    this.numItemsEnclosed = this.enclosedItems.length;
+    this.budgetRemaining = this.budget; // start at budget and subtract
+    this.valueEnclosed = 0;
+    this.costEnclosed = 0;
+    this.enclosedItems.forEach((enclosedItem) => {
+      this.budgetRemaining -= enclosedItem.cost;
+      this.costEnclosed -= enclosedItem.cost;
+      this.valueEnclosed += enclosedItem.value;
+    });
+    // old code vvv
     const force = action > 0 ? this.forceMag : -this.forceMag;
 
     const cosTheta = Math.cos(this.theta);
