@@ -27,7 +27,7 @@ const storedModelStatusInput = document.getElementById("stored-model-status");
 const hiddenLayerSizesInput = document.getElementById("hidden-layer-sizes");
 const createModelButton = document.getElementById("create-model");
 const deleteStoredModelButton = document.getElementById("delete-stored-model");
-const cartPoleCanvas = document.getElementById("knapsack-canvas");
+const knapsackCanvas = document.getElementById("knapsack-canvas");
 
 const numIterationsInput = document.getElementById("num-iterations");
 const gamesPerIterationInput = document.getElementById("games-per-iteration");
@@ -63,9 +63,9 @@ function logStatus(message) {
 
 // Objects and functions to support display of cart pole status during training.
 let renderDuringTraining = true;
-export async function maybeRenderDuringTraining(cartPole) {
+export async function maybeRenderDuringTraining(knapsack) {
   if (renderDuringTraining) {
-    renderKnapsack(cartPole, cartPoleCanvas);
+    renderKnapsack(knapsack, knapsackCanvas);
     await tf.nextFrame(); // Unblock UI thread.
   }
 }
@@ -129,16 +129,16 @@ function enableModelControls() {
 /**
  * Render the current state of the system on an HTML canvas.
  *
- * @param {Knapsack} cartPole The instance of knapsack system to render.
+ * @param {Knapsack} knapsack The instance of knapsack system to render.
  * @param {HTMLCanvasElement} canvas The instance of HTMLCanvasElement on which
  *   the rendering will happen.
  */
-function renderKnapsack(cartPole, canvas) {
+function renderKnapsack(knapsack, canvas) {
   if (!canvas.style.display) {
     canvas.style.display = "block";
   }
-  const X_MIN = -cartPole.xThreshold;
-  const X_MAX = cartPole.xThreshold;
+  const X_MIN = -knapsack.xThreshold;
+  const X_MAX = knapsack.xThreshold;
   const xRange = X_MAX - X_MIN;
   const scale = canvas.width / xRange;
 
@@ -148,10 +148,10 @@ function renderKnapsack(cartPole, canvas) {
 
   // Draw the cart.
   const railY = canvas.height * 0.8;
-  const cartW = cartPole.cartWidth * scale;
-  const cartH = cartPole.cartHeight * scale;
+  const cartW = knapsack.cartWidth * scale;
+  const cartH = knapsack.cartHeight * scale;
 
-  const cartX = cartPole.x * scale + halfW;
+  const cartX = knapsack.x * scale + halfW;
 
   context.beginPath();
   context.strokeStyle = "#000000";
@@ -175,12 +175,12 @@ function renderKnapsack(cartPole, canvas) {
   }
 
   // Draw the pole.
-  const angle = cartPole.theta + Math.PI / 2;
+  const angle = knapsack.theta + Math.PI / 2;
   const poleTopX =
-    halfW + scale * (cartPole.x + Math.cos(angle) * cartPole.length);
+    halfW + scale * (knapsack.x + Math.cos(angle) * knapsack.length);
   const poleTopY =
     railY -
-    scale * (cartPole.cartHeight / 2 + Math.sin(angle) * cartPole.length);
+    scale * (knapsack.cartHeight / 2 + Math.sin(angle) * knapsack.length);
   context.beginPath();
   context.strokeStyle = "#ffa500";
   context.lineWidth = 6;
@@ -241,7 +241,7 @@ async function updateUIControlState() {
 }
 
 export async function setUpUI() {
-  const cartPole = new Knapsack(true);
+  const knapsack = new Knapsack(true);
 
   if ((await SaveablePolicyNetwork.checkStoredModelStatus()) != null) {
     policyNet = await SaveablePolicyNetwork.loadModel();
@@ -324,7 +324,7 @@ export async function setUpUI() {
         stopRequested = false;
         for (let i = 0; i < trainIterations; ++i) {
           const gameSteps = await policyNet.train(
-            cartPole,
+            knapsack,
             optimizer,
             discountRate,
             gamesPerIteration,
@@ -360,20 +360,20 @@ export async function setUpUI() {
   testButton.addEventListener("click", async () => {
     disableModelControls();
     let isDone = false;
-    const cartPole = new Knapsack(true);
-    cartPole.setRandomState();
+    const knapsack = new Knapsack(true);
+    knapsack.setRandomState();
     let steps = 0;
     stopRequested = false;
     while (!isDone) {
       steps++;
       tf.tidy(() => {
-        const action = policyNet.getActions(cartPole.getStateTensor())[0];
+        const action = policyNet.getActions(knapsack.getStateTensor())[0];
         logStatus(
           `Test in progress. ` +
             `Action: ${action === 1 ? "<--" : " -->"} (Step ${steps})`
         );
-        isDone = cartPole.update(action);
-        renderKnapsack(cartPole, cartPoleCanvas);
+        isDone = knapsack.update(action);
+        renderKnapsack(knapsack, knapsackCanvas);
       });
       await tf.nextFrame(); // Unblock UI thread.
       if (stopRequested) {
