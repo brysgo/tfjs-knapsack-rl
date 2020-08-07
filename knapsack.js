@@ -42,16 +42,7 @@ export class Knapsack {
    */
   constructor() {
     // Constants that characterize the system.
-    this.gravity = 9.8;
-    this.massCart = 1.0;
-    this.massPole = 0.1;
-    this.totalMass = this.massCart + this.massPole;
-    this.cartWidth = 0.2;
-    this.cartHeight = 0.1;
-    this.length = 0.5;
-    this.poleMoment = this.massPole * this.length;
-    this.forceMag = 10.0;
-    this.tau = 0.02; // Seconds between state updates.
+    this.itemRange = { min: 50, max: 1000 };
 
     // Threshold values, beyond which a simulation will be marked as failed.
     this.xThreshold = 2.4;
@@ -65,14 +56,20 @@ export class Knapsack {
    */
   setRandomState() {
     // Everything but item length will be normalized
-    // TODO: add scaling factor for length
-    this.items = Array.from({
-      length: this.itemRange.min + Math.random() * this.itemRange.max,
-    }).map((x, i) => ({
-      value: Math.random(),
-      cost: Math.random(),
-      enclosed: Math.round(Math.random()),
-    }));
+
+    const numItems = this.itemRange.min + Math.random() * this.itemRange.max;
+
+    // [numberOfItems, (value,cost,inKnapsack)]
+    this.items = tf.tidy(() =>
+      tf.concat(
+        [
+          tf.randomUniform([numItems, 2]),
+          tf.randomUniform([numItems, 1], null, null, "bool"),
+        ],
+        1
+      )
+    );
+    this.cursor = 0;
   }
 
   /**
@@ -106,8 +103,10 @@ export class Knapsack {
    *   A value > 0 leads to a rightward force of a fixed magnitude.
    *   A value <= 0 leads to a leftward force of the same fixed magnitude.
    */
-  update(action) {
-    // TODO: figure out how many action states we can have and take actions
+  update([probLeft, flipProb]) {
+    const leftOnTrueRightOnFalse = probLeft > 0;
+    const flipOnTrue = flipProb > 0;
+
     this.numItemsRemaining = this.allItems.length - this.enclosedItems.length;
     this.numItemsEnclosed = this.enclosedItems.length;
     this.valueEnclosed = 0;

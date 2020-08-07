@@ -218,9 +218,11 @@ class PolicyNetwork {
   getLogitsAndActions(inputs) {
     return tf.tidy(() => {
       const logits = this.policyNet.predict(inputs);
-
+      // Split the actions here because I don't fully understand / want to mess with the sigmoid
+      const [leftLogit, logitFlip] = tf.split(logits, 2);
       // Get the probability of the leftward action and that of a flip
-      const [leftProb, probFlip] = tf.split(tf.sigmoid(logits), 2, 1);
+      const leftProb = tf.sigmoid(leftLogit);
+      const probFlip = tf.sigmoid(logitFlip);
       // Probabilites of the left and right actions.
       const leftRightProbs = tf.concat([leftProb, tf.sub(1, leftProb)], 1);
       // Probabilites of flip or no flip
@@ -244,7 +246,10 @@ class PolicyNetwork {
    *   `batchSize`.
    */
   getActions(inputs) {
-    return this.getLogitsAndActions(inputs)[1].dataSync();
+    const result = this.getLogitsAndActions(inputs)[1].dataSync();
+    // TODO: verify that this is the right shape
+    console.log("expect array with two values: ", { result });
+    return result;
   }
 
   /**
