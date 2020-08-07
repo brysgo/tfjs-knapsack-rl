@@ -84,7 +84,7 @@ class PolicyNetwork {
           units: hiddenLayerSize,
           activation: "elu",
           // `inputShape` is required only for the first layer.
-          inputShape: i === 0 ? [2, 2, 3] : undefined,
+          inputShape: i === 0 ? [2, 2, 2] : undefined,
         })
       );
     });
@@ -210,7 +210,7 @@ class PolicyNetwork {
   /**
    * Get policy-network logits and the action based on state-tensor inputs.
    *
-   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 3]`.
+   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 2]`.
    * @returns {[tf.Tensor, tf.Tensor]}
    *   1. The logits tensor, of shape `[batchSize, 2]`.
    *   2. The actions tensor, of shape `[batchSize, 2]`.
@@ -241,7 +241,7 @@ class PolicyNetwork {
   /**
    * Get actions based on a state-tensor input.
    *
-   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 3]`.
+   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 2]`.
    * @param {Float32Array} inputs The actions for the inputs, with length
    *   `batchSize`.
    */

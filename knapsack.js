@@ -24,17 +24,14 @@ import * as tf from "@tensorflow/tfjs";
 /**
  * Knapsack system simulator.
  *
- * In the control-theory sense, there are four state variables in this system:
+ * The state is a tensor of shape [2, 2, 2]:
  *
- *   - x: The 1D location of the cart.
- *   - xDot: The velocity of the cart.
- *   - theta: The angle of the pole (in radians). A value of 0 corresponds to
- *     a vertical position.
- *   - thetaDot: The angular velocity of the pole.
+ * [left/right, in/out, cost/value)]
  *
- * The system is controlled through a single action:
+ * The system is controlled through a two actions:
  *
- *   - leftward or rightward force.
+ *   - leftward or rightward curosor jump by 1/2.
+ *   - whether to flip in backpack state.
  */
 export class Knapsack {
   /**
@@ -56,10 +53,9 @@ export class Knapsack {
    */
   setRandomState() {
     // Everything but item length will be normalized
-
     const numItems = this.itemRange.min + Math.random() * this.itemRange.max;
-
     // [numberOfItems, (value,cost,inKnapsack)]
+    tf.displose(this.items);
     this.items = tf.tidy(() =>
       tf.concat(
         [
@@ -70,31 +66,52 @@ export class Knapsack {
       )
     );
     this.cursor = 0;
+    tf.displose(this.stateTensor);
+    this.stateTensor = tf.zeros([2, 2, 2]);
+    this.buildStateViewAsync();
+  }
+
+  async buildStateViewAsync() {
+    this.pending = true;
+    this.stateViewPromise;
+    tf.tidy(() => {
+      this.stateViewPromise = (async () => {
+        const [rawLeft, rawRight] = [
+          this.items.slice(0, this.cursor),
+          this.items.slice(this.cursor),
+        ];
+        const [leftInAndOut, leftInMask, rightInAndOut, rightInMask] = [
+          rawLeft.slice(0, 2),
+          rawLeft.slice(2),
+          rawRight(0, 2),
+          rawRight.slice(2),
+        ];
+        const unstackedState = await Promise.all(
+          [
+            [leftInAndOut, leftInMask, leftInMask.logicalNot()],
+            [rightInAndOut, rightInMask, rightInMask.logicalNot()],
+          ].map(async ([values, inMask, outMask]) => [
+            await tf.booleanMaskAsync(values, inMask),
+            await tf.booleanMaskAsync(values, outMask),
+          ])
+        );
+        const stateTensorBeforeSum = tf.stack(unstackedState);
+        tf.dispose(this.stateTensor);
+        this.stateTensor = tf.keep(stateTensorBeforeSum.sum(0));
+        this.pending = false;
+        return this.stateTensor;
+      })();
+    });
+    return this.stateViewPromise;
   }
 
   /**
-   * Get current state as a tf.Tensor of shape [2, 2, 3].
-   * [# batches, in/out, left/right, (cost, value, count)]
+   * Get current state as a tf.Tensor of shape [2, 2, 2].
+   * [# batches, left/right, in/out, cost/value)]
    *
-   * *current* is a special case where spacial dimensions become quantities
    */
   getStateTensor() {
-    return tf.tensor3d([
-      // in
-      [
-        // left
-        [this.costInLeft, this.valueInLeft, this.countInLeft],
-        // right
-        [this.costInRight, this.valueInRight, this.countInRight],
-      ],
-      // out
-      [
-        // left
-        [this.costOutLeft, this.valueOutLeft, this.countOutLeft],
-        // right
-        [this.costOutRight, this.valueOutRight, this.countOutRight],
-      ],
-    ]);
+    return this.stateTensor;
   }
 
   /**
@@ -103,39 +120,19 @@ export class Knapsack {
    *   A value > 0 leads to a rightward force of a fixed magnitude.
    *   A value <= 0 leads to a leftward force of the same fixed magnitude.
    */
-  update([probLeft, flipProb]) {
+  async update([probLeft, flipProb]) {
     const leftOnTrueRightOnFalse = probLeft > 0;
     const flipOnTrue = flipProb > 0;
 
-    this.numItemsRemaining = this.allItems.length - this.enclosedItems.length;
-    this.numItemsEnclosed = this.enclosedItems.length;
-    this.valueEnclosed = 0;
-    this.costEnclosed = 0;
-    this.enclosedItems.forEach((enclosedItem) => {
-      this.costEnclosed -= enclosedItem.cost;
-      this.valueEnclosed += enclosedItem.value;
-    });
-    // old code vvv
-    const force = action > 0 ? this.forceMag : -this.forceMag;
-
-    const cosTheta = Math.cos(this.theta);
-    const sinTheta = Math.sin(this.theta);
-
-    const temp =
-      (force + this.poleMoment * this.thetaDot * this.thetaDot * sinTheta) /
-      this.totalMass;
-    const thetaAcc =
-      (this.gravity * sinTheta - cosTheta * temp) /
-      (this.length *
-        (4 / 3 - (this.massPole * cosTheta * cosTheta) / this.totalMass));
-    const xAcc =
-      temp - (this.poleMoment * thetaAcc * cosTheta) / this.totalMass;
-
-    // Update the four state variables, using Euler's metohd.
-    this.x += this.tau * this.xDot;
-    this.xDot += this.tau * xAcc;
-    this.theta += this.tau * this.thetaDot;
-    this.thetaDot += this.tau * thetaAcc;
+    if (leftOnTrueRightOnFalse) {
+      // move right by half the list
+      this.cursor = Math.floor(this.cursor / 2);
+    } else {
+      // move left by half the list
+      this.cursor = Math.floor(this.cursor / 2);
+      const spaceToEnd = this.items.shape[0] - this.cursor;
+      this.cursor = this.cursor + Math.floor(spaceToEnd / 2);
+    }
 
     return this.isDone();
   }
