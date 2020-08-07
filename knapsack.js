@@ -130,7 +130,7 @@ export class Knapsack {
 
     if (flipOnTrue) {
       const flipMask = tf.zerosLike(this.items);
-      flipMask.buffer().set(this.cursor, true);
+      flipMask.bufferSync().set(true, this.cursor);
       tf.logicalXor(this.items, flipMask);
     }
 
