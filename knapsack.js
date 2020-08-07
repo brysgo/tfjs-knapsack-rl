@@ -72,7 +72,7 @@ export class Knapsack {
 
   /**
    * Get current state as a tf.Tensor of shape [2, 2, 2].
-   * [# batches, left/right, in/out, cost/value)]
+   * [# batches, left/right, in/out, value/cost)]
    *
    */
   getStateTensor() {
