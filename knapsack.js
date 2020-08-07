@@ -53,9 +53,11 @@ export class Knapsack {
    */
   setRandomState() {
     // Everything but item length will be normalized
-    const numItems = this.itemRange.min + Math.random() * this.itemRange.max;
+    const numItems = Math.floor(
+      this.itemRange.min + Math.random() * this.itemRange.max
+    );
     // [numberOfItems, (value,cost,inKnapsack)]
-    tf.displose(this.items);
+    tf.dispose(this.items);
     this.items = tf.tidy(() =>
       tf.concat(
         [
@@ -66,43 +68,6 @@ export class Knapsack {
       )
     );
     this.cursor = 0;
-    tf.displose(this.stateTensor);
-    this.stateTensor = tf.zeros([2, 2, 2]);
-    this.buildStateViewAsync();
-  }
-
-  async buildStateViewAsync() {
-    this.pending = true;
-    this.stateViewPromise;
-    tf.tidy(() => {
-      this.stateViewPromise = (async () => {
-        const [rawLeft, rawRight] = [
-          this.items.slice(0, this.cursor),
-          this.items.slice(this.cursor),
-        ];
-        const [leftInAndOut, leftInMask, rightInAndOut, rightInMask] = [
-          rawLeft.slice(0, 2),
-          rawLeft.slice(2),
-          rawRight(0, 2),
-          rawRight.slice(2),
-        ];
-        const unstackedState = await Promise.all(
-          [
-            [leftInAndOut, leftInMask, leftInMask.logicalNot()],
-            [rightInAndOut, rightInMask, rightInMask.logicalNot()],
-          ].map(async ([values, inMask, outMask]) => [
-            await tf.booleanMaskAsync(values, inMask),
-            await tf.booleanMaskAsync(values, outMask),
-          ])
-        );
-        const stateTensorBeforeSum = tf.stack(unstackedState);
-        tf.dispose(this.stateTensor);
-        this.stateTensor = tf.keep(stateTensorBeforeSum.sum(0));
-        this.pending = false;
-        return this.stateTensor;
-      })();
-    });
-    return this.stateViewPromise;
   }
 
   /**
@@ -111,7 +76,24 @@ export class Knapsack {
    *
    */
   getStateTensor() {
-    return this.stateTensor;
+    return tf.tidy(() => {
+      return tf.stack(
+        [this.items.slice(0, this.cursor), this.items.slice(this.cursor)].map(
+          (itemsPos) => {
+            const [
+              valuePosItems,
+              costPosItems,
+              inKnapsackPosItems,
+            ] = tf.unstack(itemsPos, 1);
+            const valueCostPos = tf.stack([valuePosItems, costPosItems]);
+            return tf.stack(
+              tf.mul(valueCostPos, inKnapsackPosItems),
+              tf.mul(valueCostPos, inKnapsackPosItems.sub(tf.scalar(1)))
+            );
+          }
+        )
+      );
+    });
   }
 
   /**
@@ -131,7 +113,9 @@ export class Knapsack {
     if (flipOnTrue) {
       const flipMask = tf.zerosLike(this.items);
       flipMask.bufferSync().set(true, this.cursor);
-      tf.logicalXor(this.items, flipMask);
+      const flippedItems = tf.logicalXor(this.items, flipMask);
+      tf.dispose(this.items);
+      this.items = flippedItems;
     }
 
     if (leftOnTrueRightOnFalse) {
