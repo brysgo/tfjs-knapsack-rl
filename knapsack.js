@@ -60,7 +60,7 @@ export class Knapsack {
       tf.concat(
         [
           tf.randomUniform([numItems, 2]),
-          tf.randomUniform([numItems, 1], null, null, "bool"),
+          tf.randomUniform([numItems, 1]).greater(tf.scalar(0.5)),
         ],
         1
       )
@@ -116,13 +116,23 @@ export class Knapsack {
 
   /**
    * Update the knapsack system using an action.
-   * @param {number} action Only the sign of `action` matters.
-   *   A value > 0 leads to a rightward force of a fixed magnitude.
-   *   A value <= 0 leads to a leftward force of the same fixed magnitude.
+   * @param {[ number, number ]} actions
+   *   A probLeft > 0 leads to a rightward move of half the item count
+   *   A probLeft <= 0 leads to a leftward move of half the item count
+   *   A flipProb > 0 leads to flipping the item's in backpack state
+   *   A flipProb < 0 leads to leaving the item's state as is
    */
-  async update([probLeft, flipProb]) {
+  update([probLeft, flipProb]) {
     const leftOnTrueRightOnFalse = probLeft > 0;
     const flipOnTrue = flipProb > 0;
+
+    const numItems = this.items.shape[0];
+
+    if (flipOnTrue) {
+      const flipMask = tf.zerosLike(this.items);
+      flipMask.buffer().set(this.cursor, true);
+      tf.logicalXor(this.items, flipMask);
+    }
 
     if (leftOnTrueRightOnFalse) {
       // move right by half the list
@@ -130,7 +140,7 @@ export class Knapsack {
     } else {
       // move left by half the list
       this.cursor = Math.floor(this.cursor / 2);
-      const spaceToEnd = this.items.shape[0] - this.cursor;
+      const spaceToEnd = numItems - this.cursor;
       this.cursor = this.cursor + Math.floor(spaceToEnd / 2);
     }
 
