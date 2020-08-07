@@ -88,9 +88,10 @@ class PolicyNetwork {
         })
       );
     });
-    // The last layer has only one unit. The single output number will be
-    // converted to a probability of selecting the leftward-force action.
-    this.policyNet.add(tf.layers.dense({ units: 1 }));
+    // The last layer has two units. The first output number will be
+    // converted to a probability of selecting the left cursor movement.
+    // the second unit is the probability of toggling backpack inclusion.
+    this.policyNet.add(tf.layers.dense({ units: 2 }));
   }
 
   /**
@@ -211,18 +212,26 @@ class PolicyNetwork {
    *
    * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 3]`.
    * @returns {[tf.Tensor, tf.Tensor]}
-   *   1. The logits tensor, of shape `[batchSize, 1]`.
-   *   2. The actions tensor, of shape `[batchSize, 1]`.
+   *   1. The logits tensor, of shape `[batchSize, 2]`.
+   *   2. The actions tensor, of shape `[batchSize, 2]`.
    */
   getLogitsAndActions(inputs) {
     return tf.tidy(() => {
       const logits = this.policyNet.predict(inputs);
 
-      // Get the probability of the leftward action.
-      const leftProb = tf.sigmoid(logits);
+      // Get the probability of the leftward action and that of a flip
+      const [leftProb, probFlip] = tf.split(tf.sigmoid(logits), 2, 1);
       // Probabilites of the left and right actions.
       const leftRightProbs = tf.concat([leftProb, tf.sub(1, leftProb)], 1);
-      const actions = tf.multinomial(leftRightProbs, 1, null, true);
+      // Probabilites of flip or no flip
+      const flipNoFlipProbs = tf.concat([probFlip, tf.sub(1, probFlip)], 1);
+      const actions = tf.concat(
+        [
+          tf.multinomial(leftRightProbs, 1, null, true),
+          tf.multinomial(flipNoFlipProbs, 1, null, true),
+        ],
+        1
+      );
       return [logits, actions];
     });
   }
