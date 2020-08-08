@@ -44,10 +44,13 @@ export function sum(xs) {
 
 export function pad(x, paddings, constantValue = 0) {
   return tf.tidy(() => {
-    if (x.shape.every((n) => n > 0)) {
+    if (x.shape.flat().every((n) => n > 0)) {
       return tf.pad(x, paddings, constantValue);
     } else {
-      return tf.fill(tf.tensor(paddings).sum(-1).arraySync(), constantValue);
+      return tf.fill(
+        tf.tensor(paddings).sum(-1).add(tf.tensor(x.shape)).arraySync(),
+        constantValue
+      );
     }
   });
 }

@@ -63,7 +63,10 @@ export class Knapsack {
       tf.concat(
         [
           tf.randomUniform([numItems, 2]),
-          tf.randomUniform([numItems, 1]).greater(tf.scalar(0.5)),
+          tf
+            .randomUniform([numItems, 1])
+            .greater(tf.scalar(0.5))
+            .cast("float32"),
         ],
         1
       )
@@ -84,17 +87,19 @@ export class Knapsack {
       return tf.stack(
         [
           pad(this.items.slice(0, this.cursor.index), [
-            0,
-            this.items.shape[0] - this.cursor.index,
+            [0, this.items.shape[0] - this.cursor.index],
+            [0, 0],
           ]),
-          pad(this.items.slice(this.cursor.index), [this.cursor.index, 0]),
+          pad(this.items.slice(this.cursor.index), [
+            [this.cursor.index, 0],
+            [0, 0],
+          ]),
         ].map((itemsPos) => {
           const [valuePosItems, costPosItems, inKnapsackPosItems] = tf.unstack(
             itemsPos,
             1
           );
           const valueCostPos = tf.stack([valuePosItems, costPosItems]);
-          valueCostPos.print();
           return tf.stack([
             tf.mul(valueCostPos, inKnapsackPosItems),
             tf.mul(valueCostPos, tf.scalar(1).sub(inKnapsackPosItems)),

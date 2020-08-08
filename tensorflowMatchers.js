@@ -9,11 +9,12 @@ expect.extend({
     };
 
     let pass;
+    let error;
     try {
       pass = received.sub(expected).sum().arraySync() === 0;
     } catch (e) {
       pass = false;
-      console.error(e);
+      error = e;
     }
 
     const message = pass
@@ -28,6 +29,7 @@ expect.extend({
           `Expected: not ${this.utils.printExpected(expected.arraySync())}\n` +
           `Received: ${this.utils.printReceived(received.arraySync())}`
       : () => {
+          if (error) console.error(error);
           const diffString = diff(expected.arraySync(), received.arraySync(), {
             expand: this.expand,
           });

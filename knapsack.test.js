@@ -1,22 +1,21 @@
 import * as tf from "@tensorflow/tfjs-node";
 import "./tensorflowMatchers";
-import { pad } from "./utils";
+import { Knapsack } from "./knapsack";
 
-describe("utils", () => {
-  describe("pad", () => {
-    it("unlike tf implementation, doesn't break when the tensor is empty", () => {
+describe("getStateTensor", () => {
+  it("doesn't break", () => {
+    const knapsack = new Knapsack();
+    expect(() => knapsack.getStateTensor()).not.toThrow();
+  });
+});
+
+describe("battle tests", () => {
+  describe("tf.pad", () => {
+    it("doesn't break when the tensor is empty", () => {
       tf.tidy(() => {
-        expect(() => tf.pad(tf.ones([0, 3]), [[5, 6]], 12)).toThrow();
-        expect(
-          pad(
-            tf.ones([0, 3]),
-            [
-              [5, 6],
-              [0, 0],
-            ],
-            12
-          )
-        ).toEqualTensor(tf.fill([11, 3], 12));
+        expect(tf.pad(tf.tensor([]), [[5, 6]], 12)).toEqualTensor(
+          tf.fill([11], 12)
+        );
       });
     });
     it("doesn't break when there is no padding needed", () => {

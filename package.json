@@ -15,7 +15,8 @@
   "scripts": {
     "build": "cross-env NODE_ENV=production parcel build index.html --no-minify --public-url ./",
     "link-local": "yalc link",
-    "watch": "./serve.sh"
+    "watch": "./serve.sh",
+    "test": "jest --silent --watch"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-0",
