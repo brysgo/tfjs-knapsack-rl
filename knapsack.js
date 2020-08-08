@@ -20,6 +20,7 @@
  */
 
 import * as tf from "@tensorflow/tfjs";
+import { pad } from "./utils";
 
 /**
  * Knapsack system simulator.
@@ -67,7 +68,10 @@ export class Knapsack {
         1
       )
     );
-    this.cursor = 0;
+    this.cursor = {
+      index: 0, // index of cursor in list
+      stride: 0, // track depth of cursor in virtual tree
+    };
   }
 
   /**
@@ -78,20 +82,24 @@ export class Knapsack {
   getStateTensor() {
     return tf.tidy(() => {
       return tf.stack(
-        [this.items.slice(0, this.cursor), this.items.slice(this.cursor)].map(
-          (itemsPos) => {
-            const [
-              valuePosItems,
-              costPosItems,
-              inKnapsackPosItems,
-            ] = tf.unstack(itemsPos, 1);
-            const valueCostPos = tf.stack([valuePosItems, costPosItems]);
-            return tf.stack(
-              tf.mul(valueCostPos, inKnapsackPosItems),
-              tf.mul(valueCostPos, inKnapsackPosItems.sub(tf.scalar(1)))
-            );
-          }
-        )
+        [
+          pad(this.items.slice(0, this.cursor.index), [
+            0,
+            this.items.shape[0] - this.cursor.index,
+          ]),
+          pad(this.items.slice(this.cursor.index), [this.cursor.index, 0]),
+        ].map((itemsPos) => {
+          const [valuePosItems, costPosItems, inKnapsackPosItems] = tf.unstack(
+            itemsPos,
+            1
+          );
+          const valueCostPos = tf.stack([valuePosItems, costPosItems]);
+          valueCostPos.print();
+          return tf.stack([
+            tf.mul(valueCostPos, inKnapsackPosItems),
+            tf.mul(valueCostPos, tf.scalar(1).sub(inKnapsackPosItems)),
+          ]);
+        })
       );
     });
   }
@@ -112,21 +120,24 @@ export class Knapsack {
 
     if (flipOnTrue) {
       const flipMask = tf.zerosLike(this.items);
-      flipMask.bufferSync().set(true, this.cursor);
+      flipMask.bufferSync().set(true, this.cursor.index);
       const flippedItems = tf.logicalXor(this.items, flipMask);
       tf.dispose(this.items);
       this.items = flippedItems;
     }
 
-    if (leftOnTrueRightOnFalse) {
-      // move right by half the list
-      this.cursor = Math.floor(this.cursor / 2);
+    let stride;
+    if (this.cursor.stride > 2) {
+      stride = this.cursor.stride;
     } else {
-      // move left by half the list
-      this.cursor = Math.floor(this.cursor / 2);
-      const spaceToEnd = numItems - this.cursor;
-      this.cursor = this.cursor + Math.floor(spaceToEnd / 2);
+      stride = numItems;
     }
+    stride = Math.floor(stride / 2);
+    if (leftOnTrueRightOnFalse) {
+      // flip stride sign to go left
+      stride = -stride;
+    }
+    this.cursor.index = this.cursor.index + Math.floor(stride);
 
     return this.isDone();
   }

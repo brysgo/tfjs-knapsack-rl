@@ -15,6 +15,8 @@
  * =============================================================================
  */
 
+import * as tf from "@tensorflow/tfjs";
+
 /**
  * Calculate the mean of an Array of numbers.
  *
@@ -34,8 +36,18 @@ export function mean(xs) {
  */
 export function sum(xs) {
   if (xs.length === 0) {
-    throw new Error('Expected xs to be a non-empty Array.');
+    throw new Error("Expected xs to be a non-empty Array.");
   } else {
     return xs.reduce((x, prev) => prev + x);
   }
+}
+
+export function pad(x, paddings, constantValue = 0) {
+  return tf.tidy(() => {
+    if (x.shape.every((n) => n > 0)) {
+      return tf.pad(x, paddings, constantValue);
+    } else {
+      return tf.fill(tf.tensor(paddings).sum(-1).arraySync(), constantValue);
+    }
+  });
 }
