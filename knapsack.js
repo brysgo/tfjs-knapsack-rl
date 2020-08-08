@@ -19,7 +19,7 @@
  * Implementation based on: http://incompleteideas.net/book/code/pole.c
  */
 
-import * as tf from "@tensorflow/tfjs";
+import * as tf from "./tensorflow";
 import { pad } from "./utils";
 
 /**

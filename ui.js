@@ -15,7 +15,7 @@
  * =============================================================================
  */
 
-import * as tf from "@tensorflow/tfjs";
+import * as tf from "./tensorflow";
 import * as tfvis from "@tensorflow/tfjs-vis";
 
 import { Knapsack } from "./knapsack";

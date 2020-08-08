@@ -1,6 +1,6 @@
-import * as tf from "@tensorflow/tfjs-node";
-import "./tensorflowMatchers";
+import * as tf from "./tensorflow";
 import { Knapsack } from "./knapsack";
+import "./tensorflowMatchers";
 
 describe("getStateTensor", () => {
   it("has the right dimensions", () => {

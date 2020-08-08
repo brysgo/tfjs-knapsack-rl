@@ -15,7 +15,7 @@
  * =============================================================================
  */
 
-import * as tf from "@tensorflow/tfjs";
+import * as tf from "./tensorflow";
 
 /**
  * Calculate the mean of an Array of numbers.

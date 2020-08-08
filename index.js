@@ -34,7 +34,7 @@
  *   https://github.com/openai/gym/blob/master/gym/envs/classic_control/cartpole.py
  */
 
-import * as tf from "@tensorflow/tfjs";
+import * as tf from "./tensorflow";
 
 import { maybeRenderDuringTraining, onGameEnd, setUpUI } from "./ui";
 
@@ -47,7 +47,7 @@ import { maybeRenderDuringTraining, onGameEnd, setUpUI } from "./ui";
  * of cart position, cart velocity, pole angle and pole angular velocity.
  *
  */
-class PolicyNetwork {
+export class PolicyNetwork {
   /**
    * Constructor of PolicyNetwork.
    *
@@ -140,7 +140,7 @@ class PolicyNetwork {
         const action = this.currentActions_[0];
         const isDone = knapsackSystem.update(action);
 
-        await maybeRenderDuringTraining(knapsackSystem);
+        if (!jest) await maybeRenderDuringTraining(knapsackSystem);
 
         if (isDone) {
           // When the game ends before max step count is reached, a reward of
