@@ -3,9 +3,11 @@ import "./tensorflowMatchers";
 import { Knapsack } from "./knapsack";
 
 describe("getStateTensor", () => {
-  it("doesn't break", () => {
+  it("has the right dimensions", () => {
     const knapsack = new Knapsack();
-    expect(() => knapsack.getStateTensor()).not.toThrow();
+    let state;
+    expect(() => (state = knapsack.getStateTensor())).not.toThrow();
+    expect(state.shape).toEqual([2, 2, 2]);
   });
 });
 

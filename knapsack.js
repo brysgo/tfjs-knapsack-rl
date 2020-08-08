@@ -42,10 +42,6 @@ export class Knapsack {
     // Constants that characterize the system.
     this.itemRange = { min: 50, max: 1000 };
 
-    // Threshold values, beyond which a simulation will be marked as failed.
-    this.xThreshold = 2.4;
-    this.thetaThreshold = (12 / 360) * 2 * Math.PI;
-
     this.setRandomState();
   }
 
@@ -84,28 +80,31 @@ export class Knapsack {
    */
   getStateTensor() {
     return tf.tidy(() => {
-      return tf.stack(
-        [
-          pad(this.items.slice(0, this.cursor.index), [
-            [0, this.items.shape[0] - this.cursor.index],
-            [0, 0],
-          ]),
-          pad(this.items.slice(this.cursor.index), [
-            [this.cursor.index, 0],
-            [0, 0],
-          ]),
-        ].map((itemsPos) => {
-          const [valuePosItems, costPosItems, inKnapsackPosItems] = tf.unstack(
-            itemsPos,
-            1
-          );
-          const valueCostPos = tf.stack([valuePosItems, costPosItems]);
-          return tf.stack([
-            tf.mul(valueCostPos, inKnapsackPosItems),
-            tf.mul(valueCostPos, tf.scalar(1).sub(inKnapsackPosItems)),
-          ]);
-        })
-      );
+      return tf
+        .stack(
+          [
+            pad(this.items.slice(0, this.cursor.index), [
+              [0, this.items.shape[0] - this.cursor.index],
+              [0, 0],
+            ]),
+            pad(this.items.slice(this.cursor.index), [
+              [this.cursor.index, 0],
+              [0, 0],
+            ]),
+          ].map((itemsPos) => {
+            const [
+              valuePosItems,
+              costPosItems,
+              inKnapsackPosItems,
+            ] = tf.unstack(itemsPos, 1);
+            const valueCostPos = tf.stack([valuePosItems, costPosItems]);
+            return tf.stack([
+              tf.mul(valueCostPos, inKnapsackPosItems),
+              tf.mul(valueCostPos, tf.scalar(1).sub(inKnapsackPosItems)),
+            ]);
+          })
+        )
+        .sum(-1);
     });
   }
 

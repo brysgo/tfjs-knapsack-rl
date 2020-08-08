@@ -132,7 +132,7 @@ class PolicyNetwork {
         // network's weights with respect to the probability of the action
         // choice that lead to the reward.
         const gradients = tf.tidy(() => {
-          const inputTensor = knapsackSystem.getStateTensor();
+          const inputTensor = knapsackSystem.getStateTensor().expandDims();
           return this.getGradientsAndSaveActions(inputTensor).grads;
         });
 

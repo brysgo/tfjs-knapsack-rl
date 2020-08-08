@@ -16,7 +16,7 @@
     "build": "cross-env NODE_ENV=production parcel build index.html --no-minify --public-url ./",
     "link-local": "yalc link",
     "watch": "./serve.sh",
-    "test": "jest --silent --watch"
+    "test": "TF_CPP_MIN_LOG_LEVEL=2 jest --watch"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-0",
