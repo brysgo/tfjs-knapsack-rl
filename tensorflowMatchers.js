@@ -1,10 +1,4 @@
-import * as tf from "./tensorflow";
 import diff from "jest-diff";
-
-it.tidy = (...args) =>
-  tf.tidy(() => {
-    it(...args);
-  });
 
 expect.extend({
   toEqualTensor(received, expected) {
