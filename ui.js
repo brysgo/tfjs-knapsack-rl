@@ -140,6 +140,11 @@ function drawBar(
   ctx.restore();
 }
 
+function heatMapColor(value) {
+  var h = (1.0 - value) * 240;
+  return "hsl(" + h + ", 100%, 50%)";
+}
+
 function drawStackedBar(
   ctx,
   upperLeftCornerX,
@@ -147,16 +152,20 @@ function drawStackedBar(
   width,
   height,
   values,
-  total
+  total,
+  maxValue
 ) {
-  values.forEach(() => {
-    this.drawBar(
+  let runningTotal = 0;
+  values.forEach((value, i) => {
+    drawBar(
       ctx,
-      upperLeftCornerX,
+      width * (runningTotal / total) + upperLeftCornerX,
       upperLeftCornerY,
       width * (value / total),
-      height
+      height,
+      heatMapColor(value / maxValue)
     );
+    runningTotal += value;
   });
 }
 
@@ -183,7 +192,9 @@ function renderKnapsack(knapsack, canvas) {
   let totalCostIn = 0,
     totalValueIn = 0,
     totalCostOut = 0,
-    totalValueOut = 0;
+    totalValueOut = 0,
+    maxCost = 0,
+    maxValue = 0;
   const costs = [];
   const values = [];
   knapsack.items.arraySync().forEach(([cost, value, inKnapsack], i) => {
@@ -197,10 +208,34 @@ function renderKnapsack(knapsack, canvas) {
       totalCostOut += cost;
       totalValueOut += value;
     }
+    maxCost = Math.max(maxCost, cost);
+    maxValue = Math.max(maxValue, value);
   });
 
-  this.drawStackedBar(context, 100, 50, 500, 100, values, totalValueIn);
-  this.drawStackedBar(context, 100, 150, 500, 100, costs, totalCostIn);
+  context.fillText("in", 100, 25);
+  context.fillText("out", 450, 25);
+  context.fillText("value", 10, 100);
+  context.fillText("cost", 10, 200);
+  drawStackedBar(
+    context,
+    100,
+    50,
+    500,
+    100,
+    values,
+    totalValueIn + totalValueOut,
+    maxValue
+  );
+  drawStackedBar(
+    context,
+    100,
+    150,
+    500,
+    100,
+    costs,
+    totalCostIn + totalCostOut,
+    maxCost
+  );
 
   context.fillText("score", 10, 300);
   context.fillText(knapsack.value(), 100, 300);
