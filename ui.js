@@ -137,90 +137,25 @@ function renderKnapsack(knapsack, canvas) {
   if (!canvas.style.display) {
     canvas.style.display = "block";
   }
-  const X_MIN = -knapsack.xThreshold;
-  const X_MAX = knapsack.xThreshold;
-  const xRange = X_MAX - X_MIN;
-  const scale = canvas.width / xRange;
+  // knapsack.lastStateTensor;
+  // knapsack.cursor;
 
   const context = canvas.getContext("2d");
   context.clearRect(0, 0, canvas.width, canvas.height);
   const halfW = canvas.width / 2;
 
-  // Draw the cart.
-  const railY = canvas.height * 0.8;
-  const cartW = knapsack.cartWidth * scale;
-  const cartH = knapsack.cartHeight * scale;
-
-  const cartX = knapsack.x * scale + halfW;
-
-  context.beginPath();
-  context.strokeStyle = "#000000";
-  context.lineWidth = 2;
-  context.rect(cartX - cartW / 2, railY - cartH / 2, cartW, cartH);
-  context.stroke();
-
-  // Draw the wheels under the cart.
-  const wheelRadius = cartH / 4;
-  for (const offsetX of [-1, 1]) {
-    context.beginPath();
-    context.lineWidth = 2;
-    context.arc(
-      cartX - (cartW / 4) * offsetX,
-      railY + cartH / 2 + wheelRadius,
-      wheelRadius,
-      0,
-      2 * Math.PI
-    );
-    context.stroke();
-  }
-
-  // Draw the pole.
-  const angle = knapsack.theta + Math.PI / 2;
-  const poleTopX =
-    halfW + scale * (knapsack.x + Math.cos(angle) * knapsack.length);
-  const poleTopY =
-    railY -
-    scale * (knapsack.cartHeight / 2 + Math.sin(angle) * knapsack.length);
-  context.beginPath();
-  context.strokeStyle = "#ffa500";
-  context.lineWidth = 6;
-  context.moveTo(cartX, railY - cartH / 2);
-  context.lineTo(poleTopX, poleTopY);
-  context.stroke();
-
-  // Draw the ground.
-  const groundY = railY + cartH / 2 + wheelRadius * 2;
-  context.beginPath();
-  context.strokeStyle = "#000000";
-  context.lineWidth = 1;
-  context.moveTo(0, groundY);
-  context.lineTo(canvas.width, groundY);
-  context.stroke();
-
-  const nDivisions = 40;
-  for (let i = 0; i < nDivisions; ++i) {
-    const x0 = (canvas.width / nDivisions) * i;
-    const x1 = x0 + canvas.width / nDivisions / 2;
-    const y0 = groundY + canvas.width / nDivisions / 2;
-    const y1 = groundY;
-    context.beginPath();
-    context.moveTo(x0, y0);
-    context.lineTo(x1, y1);
-    context.stroke();
-  }
-
-  // Draw the left and right limits.
-  const limitTopY = groundY - canvas.height / 2;
-  context.beginPath();
-  context.strokeStyle = "#ff0000";
-  context.lineWidth = 2;
-  context.moveTo(1, groundY);
-  context.lineTo(1, limitTopY);
-  context.stroke();
-  context.beginPath();
-  context.moveTo(canvas.width - 1, groundY);
-  context.lineTo(canvas.width - 1, limitTopY);
-  context.stroke();
+  context.fillText("cost, value", 100, 25);
+  context.fillText("left/in", 10, 50);
+  context.fillText("left/out", 10, 100);
+  context.fillText("right/in", 10, 150);
+  context.fillText("right/out", 10, 200);
+  context.font = "24px serif";
+  knapsack.lastStateTensor
+    .arraySync()
+    .flat()
+    .forEach((n, i) => {
+      context.fillText(n + "", 100, (i + 1) * 50);
+    });
 }
 
 async function updateUIControlState() {
@@ -367,7 +302,7 @@ export async function setUpUI() {
     while (!isDone) {
       steps++;
       tf.tidy(() => {
-        const action = policyNet.getActions(knapsack.getStateTensor())[0];
+        const action = policyNet.getActions(knapsack.getStateTensor());
         logStatus(
           `Test in progress. ` +
             `Action: ${action === 1 ? "<--" : " -->"} (Step ${steps})`

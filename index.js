@@ -247,8 +247,6 @@ export class PolicyNetwork {
     const result = this.getLogitsAndActions(
       tf.expandDims(inputs)
     )[1].dataSync();
-    // TODO: verify that this is the right shape
-    console.log("expect array with two values: ", { result });
     return result;
   }
 

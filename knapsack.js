@@ -78,11 +78,12 @@ export class Knapsack {
 
   /**
    * Get current state as a tf.Tensor of shape [2, 2, 2].
-   * [# batches, left/right, in/out, value/cost)]
+   * [# batches, left/right, in/out, cost/value)]
    *
    */
   getStateTensor() {
-    return tf.tidy(() => {
+    tf.dispose(this.lastStateTensor);
+    this.lastStateTensor = tf.tidy(() => {
       return tf
         .stack(
           [
@@ -96,11 +97,11 @@ export class Knapsack {
             ]),
           ].map((itemsPos) => {
             const [
-              valuePosItems,
               costPosItems,
+              valuePosItems,
               inKnapsackPosItems,
             ] = tf.unstack(itemsPos, 1);
-            const valueCostPos = tf.stack([valuePosItems, costPosItems]);
+            const valueCostPos = tf.stack([costPosItems, valuePosItems]);
             return tf.stack([
               tf.mul(valueCostPos, inKnapsackPosItems),
               tf.mul(valueCostPos, tf.scalar(1).sub(inKnapsackPosItems)),
@@ -109,6 +110,7 @@ export class Knapsack {
         )
         .sum(-1);
     });
+    return this.lastStateTensor;
   }
 
   /**
@@ -154,11 +156,19 @@ export class Knapsack {
 
   value() {
     return tf.tidy(() => {
-      const [valuePosItems, costPosItems, inKnapsackPosItems] = tf.unstack(
+      const [costPosItems, valuePosItems, inKnapsackPosItems] = tf.unstack(
         this.items,
         1
       );
-      return tf.mul(costPosItems, inKnapsackPosItems).sum().dataSync()[0];
+      const isOver = tf
+        .mul(costPosItems, inKnapsackPosItems)
+        .sum()
+        .greater(1)
+        .dataSync()[0];
+      if (!isOver) {
+        return 0;
+      }
+      return tf.mul(valuePosItems, inKnapsackPosItems).sum().dataSync()[0];
     });
   }
 
