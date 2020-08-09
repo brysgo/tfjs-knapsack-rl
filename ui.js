@@ -126,6 +126,40 @@ function enableModelControls() {
   deleteStoredModelButton.disabled = false;
 }
 
+function drawBar(
+  ctx,
+  upperLeftCornerX,
+  upperLeftCornerY,
+  width,
+  height,
+  color
+) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.fillRect(upperLeftCornerX, upperLeftCornerY, width, height);
+  ctx.restore();
+}
+
+function drawStackedBar(
+  ctx,
+  upperLeftCornerX,
+  upperLeftCornerY,
+  width,
+  height,
+  values,
+  total
+) {
+  values.forEach(() => {
+    this.drawBar(
+      ctx,
+      upperLeftCornerX,
+      upperLeftCornerY,
+      width * (value / total),
+      height
+    );
+  });
+}
+
 /**
  * Render the current state of the system on an HTML canvas.
  *
@@ -134,6 +168,7 @@ function enableModelControls() {
  *   the rendering will happen.
  */
 function renderKnapsack(knapsack, canvas) {
+  if (!knapsack) return;
   if (!canvas.style.display) {
     canvas.style.display = "block";
   }
@@ -144,22 +179,29 @@ function renderKnapsack(knapsack, canvas) {
   context.clearRect(0, 0, canvas.width, canvas.height);
   const halfW = canvas.width / 2;
 
-  context.fillText("cost, value", 100, 25);
-  context.fillText("left/in", 10, 60);
-  context.fillText("left/out", 10, 120);
-  context.fillText("right/in", 10, 180);
-  context.fillText("right/out", 10, 240);
   context.font = "24px serif";
-  if (!knapsack.lastStateTensor) knapsack.getStateTensor();
-  knapsack.lastStateTensor.arraySync().forEach((n, i) => {
-    n.forEach((m, j) => {
-      context.fillText(
-        m.map((l) => l.toPrecision(4)).join(", "),
-        100,
-        (2 * i + j + 1) * 60
-      );
-    });
+  let totalCostIn = 0,
+    totalValueIn = 0,
+    totalCostOut = 0,
+    totalValueOut = 0;
+  const costs = [];
+  const values = [];
+  knapsack.items.arraySync().forEach(([cost, value, inKnapsack], i) => {
+    const method = inKnapsack ? "unshift" : "push";
+    costs[method](cost);
+    values[method](value);
+    if (inKnapsack) {
+      totalCostIn += cost;
+      totalValueIn += value;
+    } else {
+      totalCostOut += cost;
+      totalValueOut += value;
+    }
   });
+
+  this.drawStackedBar(context, 100, 50, 500, 100, values, totalValueIn);
+  this.drawStackedBar(context, 100, 150, 500, 100, costs, totalCostIn);
+
   context.fillText("score", 10, 300);
   context.fillText(knapsack.value(), 100, 300);
 }

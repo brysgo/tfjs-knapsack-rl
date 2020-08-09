@@ -54,7 +54,7 @@ export class Knapsack {
     const numItems = Math.floor(
       this.itemRange.min + Math.random() * this.itemRange.max
     );
-    // [numberOfItems, (value,cost,inKnapsack)]
+    // [numberOfItems, (cost, value,inKnapsack)]
     tf.dispose(this.items);
     this.items = tf.tidy(() =>
       tf.concat(
@@ -84,8 +84,7 @@ export class Knapsack {
    *
    */
   getStateTensor() {
-    tf.dispose(this.lastStateTensor);
-    this.lastStateTensor = tf.tidy(() => {
+    return tf.tidy(() => {
       return tf
         .stack(
           [
@@ -112,7 +111,6 @@ export class Knapsack {
         )
         .sum(-1);
     });
-    return this.lastStateTensor;
   }
 
   /**

@@ -59,12 +59,6 @@ describe("policyNet", () => {
 
     const optimizer = tf.train.adam(0.05);
 
-    const gameSteps = await policyNetwork.train(
-      knapsack,
-      optimizer,
-      0.95,
-      1,
-      100
-    );
+    await policyNetwork.train(knapsack, optimizer, 0.95, 1, 100);
   });
 });
