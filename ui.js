@@ -145,17 +145,23 @@ function renderKnapsack(knapsack, canvas) {
   const halfW = canvas.width / 2;
 
   context.fillText("cost, value", 100, 25);
-  context.fillText("left/in", 10, 50);
-  context.fillText("left/out", 10, 100);
-  context.fillText("right/in", 10, 150);
-  context.fillText("right/out", 10, 200);
+  context.fillText("left/in", 10, 60);
+  context.fillText("left/out", 10, 120);
+  context.fillText("right/in", 10, 180);
+  context.fillText("right/out", 10, 240);
   context.font = "24px serif";
-  knapsack.lastStateTensor
-    .arraySync()
-    .flat()
-    .forEach((n, i) => {
-      context.fillText(n + "", 100, (i + 1) * 50);
+  if (!knapsack.lastStateTensor) knapsack.getStateTensor();
+  knapsack.lastStateTensor.arraySync().forEach((n, i) => {
+    n.forEach((m, j) => {
+      context.fillText(
+        m.map((l) => l.toPrecision(4)).join(", "),
+        100,
+        (2 * i + j + 1) * 60
+      );
     });
+  });
+  context.fillText("score", 10, 300);
+  context.fillText(knapsack.value(), 100, 300);
 }
 
 async function updateUIControlState() {

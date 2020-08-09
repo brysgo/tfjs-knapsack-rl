@@ -40,8 +40,8 @@ export class Knapsack {
    */
   constructor() {
     // Constants that characterize the system.
-    this.itemRange = { min: 50, max: 1000 };
-    this.idleThreshold = 1;
+    this.itemRange = { min: 50, averageKnapsackCapacity: 200, max: 1000 };
+    this.idleThreshold = 2;
 
     this.setRandomState();
   }
@@ -59,7 +59,9 @@ export class Knapsack {
     this.items = tf.tidy(() =>
       tf.concat(
         [
-          tf.randomUniform([numItems, 2]),
+          tf
+            .randomUniform([numItems, 2])
+            .div(this.itemRange.averageKnapsackCapacity),
           tf
             .randomUniform([numItems, 1])
             .greater(tf.scalar(0.5))
@@ -165,7 +167,7 @@ export class Knapsack {
         .sum()
         .greater(1)
         .dataSync()[0];
-      if (!isOver) {
+      if (isOver) {
         return 0;
       }
       return tf.mul(valuePosItems, inKnapsackPosItems).sum().dataSync()[0];

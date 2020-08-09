@@ -1,6 +1,7 @@
 import * as tf from "./tensorflow";
 import { Knapsack } from "./knapsack";
 import "./tensorflowMatchers";
+import { onesLike } from "@tensorflow/tfjs";
 
 Math.seedrandom("deterministic test results");
 
@@ -14,12 +15,39 @@ describe("knapsack", () => {
     });
   });
   describe("value", () => {
-    it("returns zero if the knapsack is over", () => {});
+    it("returns zero if the knapsack is over", () => {
+      const knapsack = new Knapsack();
+      knapsack.setRandomState();
+      const [costPosItems, valuePosItems, inKnapsackPosItems] = tf.unstack(
+        knapsack.items,
+        1
+      );
+      knapsack.items = tf.stack(
+        [
+          tf.onesLike(costPosItems),
+          valuePosItems,
+          tf.onesLike(inKnapsackPosItems),
+        ],
+        1
+      );
+      expect(knapsack.value()).toBe(0);
+    });
     it("returns the value in the knapsack", () => {
       const knapsack = new Knapsack();
-      let state;
       knapsack.setRandomState();
-      expect(knapsack.value()).toMatchInlineSnapshot(`202.24197387695312`);
+      const [costPosItems, valuePosItems, inKnapsackPosItems] = tf.unstack(
+        knapsack.items,
+        1
+      );
+      knapsack.items = tf.stack(
+        [
+          tf.truncatedNormal(costPosItems.shape),
+          valuePosItems,
+          inKnapsackPosItems,
+        ],
+        1
+      );
+      expect(knapsack.value()).toMatchInlineSnapshot(`0.5881654620170593`);
     });
   });
 });

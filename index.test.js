@@ -63,7 +63,7 @@ describe("policyNet", () => {
       knapsack,
       optimizer,
       0.95,
-      3,
+      1,
       100
     );
   });
