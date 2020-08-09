@@ -141,7 +141,7 @@ export class PolicyNetwork {
         const action = this.currentActions_[0];
         const isDone = knapsackSystem.update(action);
 
-        if (!jest) await maybeRenderDuringTraining(knapsackSystem);
+        await maybeRenderDuringTraining(knapsackSystem);
 
         if (isDone) {
           // When the game ends before max step count is reached, a reward of

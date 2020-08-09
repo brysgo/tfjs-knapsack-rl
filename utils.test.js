@@ -5,7 +5,8 @@ import "./tensorflowMatchers";
 describe("utils", () => {
   describe("pad", () => {
     it("unlike tf implementation, doesn't break when the tensor is empty", () => {
-      expect(() => tf.pad(tf.ones([0, 3]), [[5, 6]], 12)).toThrow();
+      // This only throws with node bindings
+      // expect(() => tf.pad(tf.ones([0, 3]), [[5, 6]], 12)).toThrow();
       expect(
         pad(
           tf.ones([0, 3]),
