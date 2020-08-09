@@ -143,16 +143,9 @@ export class PolicyNetwork {
 
         await maybeRenderDuringTraining(knapsackSystem);
 
+        gameRewards.push(knapsackSystem.value());
         if (isDone) {
-          // When the game ends before max step count is reached, a reward of
-          // 0 is given.
-          gameRewards.push(0);
           break;
-        } else {
-          // As long as the game doesn't end, each step leads to a reward of 1.
-          // These reward values will later be "discounted", leading to
-          // higher reward values for longer-lasting games.
-          gameRewards.push(1);
         }
       }
       onGameEnd(i + 1, numGames);

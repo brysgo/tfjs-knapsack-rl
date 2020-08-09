@@ -41,6 +41,7 @@ export class Knapsack {
   constructor() {
     // Constants that characterize the system.
     this.itemRange = { min: 50, max: 1000 };
+    this.idleThreshold = 1;
 
     this.setRandomState();
   }
@@ -71,6 +72,8 @@ export class Knapsack {
       index: 0, // index of cursor in list
       stride: 0, // track depth of cursor in virtual tree
     };
+    this.treeDepth = Math.floor(Math.log(numItems));
+    this.idleCount = 0;
   }
 
   /**
@@ -123,9 +126,12 @@ export class Knapsack {
     const numItems = this.items.shape[0];
 
     if (flipOnTrue) {
+      this.idleCount = 0;
       const itemBuffer = this.items.bufferSync();
       const newState = !itemBuffer.get(this.cursor.index, 2);
       itemBuffer.set(newState, this.cursor.index, 2);
+    } else {
+      this.idleCount++;
     }
 
     let stride;
@@ -146,6 +152,16 @@ export class Knapsack {
     return this.isDone();
   }
 
+  value() {
+    return tf.tidy(() => {
+      const [valuePosItems, costPosItems, inKnapsackPosItems] = tf.unstack(
+        this.items,
+        1
+      );
+      return tf.mul(costPosItems, inKnapsackPosItems).sum().dataSync()[0];
+    });
+  }
+
   /**
    * Determine whether this simulation is done.
    *
@@ -155,11 +171,6 @@ export class Knapsack {
    * @returns {bool} Whether the simulation is done.
    */
   isDone() {
-    return (
-      this.x < -this.xThreshold ||
-      this.x > this.xThreshold ||
-      this.theta < -this.thetaThreshold ||
-      this.theta > this.thetaThreshold
-    );
+    return this.idleCount > this.treeDepth * this.idleThreshold;
   }
 }

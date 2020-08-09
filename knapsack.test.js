@@ -2,12 +2,25 @@ import * as tf from "./tensorflow";
 import { Knapsack } from "./knapsack";
 import "./tensorflowMatchers";
 
-describe("getStateTensor", () => {
-  it("has the right dimensions", () => {
-    const knapsack = new Knapsack();
-    let state;
-    expect(() => (state = knapsack.getStateTensor())).not.toThrow();
-    expect(state.shape).toEqual([2, 2, 2]);
+Math.seedrandom("deterministic test results");
+
+describe("knapsack", () => {
+  describe("getStateTensor", () => {
+    it("has the right dimensions", () => {
+      const knapsack = new Knapsack();
+      let state;
+      expect(() => (state = knapsack.getStateTensor())).not.toThrow();
+      expect(state.shape).toEqual([2, 2, 2]);
+    });
+  });
+  describe("value", () => {
+    it("returns zero if the knapsack is over", () => {});
+    it("returns the value in the knapsack", () => {
+      const knapsack = new Knapsack();
+      let state;
+      knapsack.setRandomState();
+      expect(knapsack.value()).toMatchInlineSnapshot(`202.24197387695312`);
+    });
   });
 });
 

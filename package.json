@@ -30,6 +30,7 @@
     "jest": "^26.2.2",
     "jest-diff": "^26.2.0",
     "parcel-bundler": "~1.10.3",
+    "prettier": "^2.0.5",
     "typescript": "^2.9.2",
     "yalc": "~1.0.0-pre.22"
   },
