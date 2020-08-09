@@ -367,9 +367,7 @@ export async function setUpUI() {
     while (!isDone) {
       steps++;
       tf.tidy(() => {
-        const action = policyNet.getActions(
-          knapsack.getStateTensor().expandDims()
-        )[0];
+        const action = policyNet.getActions(knapsack.getStateTensor())[0];
         logStatus(
           `Test in progress. ` +
             `Action: ${action === 1 ? "<--" : " -->"} (Step ${steps})`

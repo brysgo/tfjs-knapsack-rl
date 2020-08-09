@@ -77,17 +77,18 @@ export class PolicyNetwork {
     if (!Array.isArray(hiddenLayerSizes)) {
       hiddenLayerSizes = [hiddenLayerSizes];
     }
+
     this.policyNet = tf.sequential();
     hiddenLayerSizes.forEach((hiddenLayerSize, i) => {
       this.policyNet.add(
         tf.layers.dense({
           units: hiddenLayerSize,
           activation: "elu",
-          // `inputShape` is required only for the first layer.
           inputShape: i === 0 ? [2, 2, 2] : undefined,
         })
       );
     });
+    this.policyNet.add(tf.layers.flatten());
     // The last layer has two units. The first output number will be
     // converted to a probability of selecting the left cursor movement.
     // the second unit is the probability of toggling backpack inclusion.
@@ -132,7 +133,7 @@ export class PolicyNetwork {
         // network's weights with respect to the probability of the action
         // choice that lead to the reward.
         const gradients = tf.tidy(() => {
-          const inputTensor = knapsackSystem.getStateTensor().expandDims();
+          const inputTensor = knapsackSystem.getStateTensor();
           return this.getGradientsAndSaveActions(inputTensor).grads;
         });
 
@@ -192,7 +193,9 @@ export class PolicyNetwork {
   getGradientsAndSaveActions(inputTensor) {
     const f = () =>
       tf.tidy(() => {
-        const [logits, actions] = this.getLogitsAndActions(inputTensor);
+        const [logits, actions] = this.getLogitsAndActions(
+          tf.expandDims(inputTensor)
+        );
         this.currentActions_ = actions.dataSync();
         const labels = tf.sub(
           1,
@@ -219,7 +222,9 @@ export class PolicyNetwork {
     return tf.tidy(() => {
       const logits = this.policyNet.predict(inputs);
       // Split the actions here because I don't fully understand / want to mess with the sigmoid
-      const [leftLogit, logitFlip] = tf.split(logits, 2);
+      const [leftLogit, logitFlip] = tf
+        .split(tf.squeeze(logits), 2)
+        .map(tf.expandDims);
       // Get the probability of the leftward action and that of a flip
       const leftProb = tf.sigmoid(leftLogit);
       const probFlip = tf.sigmoid(logitFlip);
@@ -246,7 +251,9 @@ export class PolicyNetwork {
    *   `batchSize`.
    */
   getActions(inputs) {
-    const result = this.getLogitsAndActions(inputs)[1].dataSync();
+    const result = this.getLogitsAndActions(
+      tf.expandDims(inputs)
+    )[1].dataSync();
     // TODO: verify that this is the right shape
     console.log("expect array with two values: ", { result });
     return result;
