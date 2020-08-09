@@ -44,4 +44,29 @@ describe("policyNet", () => {
       policyNetwork.policyNet.predict(tf.expandDims(input)).shape
     ).toEqual([1, 2]);
   });
+
+  it("can train the network without errors", async () => {
+    let input, policyNetwork;
+    try {
+      const knapsack = new Knapsack();
+      knapsack.setRandomState();
+      input = knapsack.getStateTensor();
+      policyNetwork = new PolicyNetwork([128]);
+    } catch (e) {
+      // don't fail because of setup
+      console.error(e);
+    }
+
+    const optimizer = tf.train.adam(0.05);
+
+    await expect(async () => {
+      const gameSteps = await policyNet.train(
+        knapsack,
+        optimizer,
+        0.95,
+        2,
+        100
+      );
+    }).not.toThrow();
+  });
 });
