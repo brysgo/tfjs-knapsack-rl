@@ -145,6 +145,7 @@ function heatMapColor(value) {
   return "hsl(" + h + ", 100%, 50%)";
 }
 
+const SEPARATOR = "separator";
 function drawStackedBar(
   ctx,
   upperLeftCornerX,
@@ -157,15 +158,26 @@ function drawStackedBar(
 ) {
   let runningTotal = 0;
   values.forEach((value, i) => {
-    drawBar(
-      ctx,
-      width * (runningTotal / total) + upperLeftCornerX,
-      upperLeftCornerY,
-      width * (value / total),
-      height,
-      heatMapColor(value / maxValue)
-    );
-    runningTotal += value;
+    if (value === SEPARATOR) {
+      drawBar(
+        ctx,
+        width * (runningTotal / total) + upperLeftCornerX,
+        upperLeftCornerY - 10,
+        10,
+        120,
+        "black"
+      );
+    } else {
+      drawBar(
+        ctx,
+        width * (runningTotal / total) + upperLeftCornerX,
+        upperLeftCornerY,
+        width * (value / total),
+        height,
+        heatMapColor(value / maxValue)
+      );
+      runningTotal += value;
+    }
   });
 }
 
@@ -193,14 +205,19 @@ function renderKnapsack(knapsack, canvas) {
     totalValueIn = 0,
     totalCostOut = 0,
     totalValueOut = 0,
+    totalROI = 0,
     maxCost = 0,
-    maxValue = 0;
-  const costs = [];
-  const values = [];
+    maxValue = 0,
+    maxROI = 0;
+  const costs = [SEPARATOR];
+  const values = [SEPARATOR];
+  const rois = [SEPARATOR];
   knapsack.items.arraySync().forEach(([cost, value, inKnapsack], i) => {
+    const ROI = value / cost;
     const method = inKnapsack ? "unshift" : "push";
     costs[method](cost);
     values[method](value);
+    rois[method](ROI);
     if (inKnapsack) {
       totalCostIn += cost;
       totalValueIn += value;
@@ -208,14 +225,17 @@ function renderKnapsack(knapsack, canvas) {
       totalCostOut += cost;
       totalValueOut += value;
     }
+    totalROI += ROI;
     maxCost = Math.max(maxCost, cost);
     maxValue = Math.max(maxValue, value);
+    maxROI = Math.max(maxROI, ROI);
   });
 
   context.fillText("in", 100, 25);
   context.fillText("out", 450, 25);
   context.fillText("value", 10, 100);
   context.fillText("cost", 10, 200);
+  context.fillText("ROI", 10, 300);
   drawStackedBar(
     context,
     100,
@@ -236,9 +256,10 @@ function renderKnapsack(knapsack, canvas) {
     totalCostIn + totalCostOut,
     maxCost
   );
+  drawStackedBar(context, 100, 250, 500, 100, rois, totalROI, maxROI);
 
-  context.fillText("score", 10, 300);
-  context.fillText(knapsack.value(), 100, 300);
+  context.fillText("score", 10, 400);
+  context.fillText(knapsack.value(), 100, 400);
 }
 
 async function updateUIControlState() {

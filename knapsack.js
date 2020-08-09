@@ -40,7 +40,8 @@ export class Knapsack {
    */
   constructor() {
     // Constants that characterize the system.
-    this.itemRange = { min: 50, averageKnapsackCapacity: 200, max: 1000 };
+    this.itemRange = { min: 50, max: 1000 };
+    this.costValueMultiplier = 5;
     this.idleThreshold = 2;
 
     this.setRandomState();
@@ -59,13 +60,12 @@ export class Knapsack {
     this.items = tf.tidy(() =>
       tf.concat(
         [
-          tf
-            .randomUniform([numItems, 2])
-            .div(this.itemRange.averageKnapsackCapacity),
-          tf
-            .randomUniform([numItems, 1])
-            .greater(tf.scalar(0.5))
-            .cast("float32"),
+          tf.randomUniform(
+            [numItems, 2],
+            0,
+            this.costValueMultiplier / numItems
+          ),
+          tf.zeros([numItems, 1]), // keep this zero for better reward
         ],
         1
       )
