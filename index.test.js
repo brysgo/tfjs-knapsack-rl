@@ -46,9 +46,9 @@ describe("policyNet", () => {
   });
 
   it("can train the network without errors", async () => {
-    let input, policyNetwork;
+    let input, knapsack, policyNetwork;
     try {
-      const knapsack = new Knapsack();
+      knapsack = new Knapsack();
       knapsack.setRandomState();
       input = knapsack.getStateTensor();
       policyNetwork = new PolicyNetwork([128]);
@@ -59,14 +59,12 @@ describe("policyNet", () => {
 
     const optimizer = tf.train.adam(0.05);
 
-    await expect(async () => {
-      const gameSteps = await policyNet.train(
-        knapsack,
-        optimizer,
-        0.95,
-        2,
-        100
-      );
-    }).not.toThrow();
+    const gameSteps = await policyNetwork.train(
+      knapsack,
+      optimizer,
+      0.95,
+      3,
+      100
+    );
   });
 });

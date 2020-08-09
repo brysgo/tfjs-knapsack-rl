@@ -123,25 +123,25 @@ export class Knapsack {
     const numItems = this.items.shape[0];
 
     if (flipOnTrue) {
-      const flipMask = tf.zerosLike(this.items);
-      flipMask.bufferSync().set(true, this.cursor.index);
-      const flippedItems = tf.logicalXor(this.items, flipMask);
-      tf.dispose(this.items);
-      this.items = flippedItems;
+      const itemBuffer = this.items.bufferSync();
+      const newState = !itemBuffer.get(this.cursor.index, 2);
+      itemBuffer.set(newState, this.cursor.index, 2);
     }
 
     let stride;
-    if (this.cursor.stride > 2) {
+    if (this.cursor.stride >= 2) {
       stride = this.cursor.stride;
     } else {
-      stride = numItems;
+      stride = Math.floor(numItems / 2);
+      this.cursor.index = Math.floor(numItems / 2);
     }
     stride = Math.floor(stride / 2);
     if (leftOnTrueRightOnFalse) {
       // flip stride sign to go left
       stride = -stride;
     }
-    this.cursor.index = this.cursor.index + Math.floor(stride);
+    this.cursor.index = this.cursor.index + stride;
+    this.cursor.stride = Math.abs(stride);
 
     return this.isDone();
   }

@@ -138,7 +138,7 @@ export class PolicyNetwork {
         });
 
         this.pushGradients(gameGradients, gradients);
-        const action = this.currentActions_[0];
+        const action = this.currentActions_;
         const isDone = knapsackSystem.update(action);
 
         await maybeRenderDuringTraining(knapsackSystem);
