@@ -156,23 +156,26 @@ function drawStackedBar(
   total,
   maxValue
 ) {
+  const separatorValue = (10 * total) / width;
+  const totalWithSeparator = total + separatorValue;
   let runningTotal = 0;
   values.forEach((value, i) => {
     if (value === SEPARATOR) {
       drawBar(
         ctx,
-        width * (runningTotal / total) + upperLeftCornerX,
-        upperLeftCornerY - 10,
-        10,
-        120,
+        width * (runningTotal / totalWithSeparator) + upperLeftCornerX,
+        upperLeftCornerY,
+        width * (separatorValue / totalWithSeparator),
+        height,
         "black"
       );
+      runningTotal += separatorValue;
     } else {
       drawBar(
         ctx,
-        width * (runningTotal / total) + upperLeftCornerX,
+        width * (runningTotal / totalWithSeparator) + upperLeftCornerX,
         upperLeftCornerY,
-        width * (value / total),
+        width * (value / totalWithSeparator),
         height,
         heatMapColor(value / maxValue)
       );
