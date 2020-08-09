@@ -42,7 +42,7 @@ export class Knapsack {
     // Constants that characterize the system.
     this.itemRange = { min: 50, max: 1000 };
     this.costValueMultiplier = 5;
-    this.idleThreshold = 2;
+    this.idleThreshold = 10;
 
     this.setRandomState();
   }
@@ -160,15 +160,13 @@ export class Knapsack {
         this.items,
         1
       );
-      const isOver = tf
-        .mul(costPosItems, inKnapsackPosItems)
+      const budget = 1; // cost is normalized
+      const costInKnapsack = tf.mul(costPosItems, inKnapsackPosItems);
+      const countedItems = tf.cumsum(costInKnapsack).lessEqual(budget);
+      return tf
+        .mul(tf.mul(valuePosItems, inKnapsackPosItems), countedItems)
         .sum()
-        .greater(1)
         .dataSync()[0];
-      if (isOver) {
-        return 0;
-      }
-      return tf.mul(valuePosItems, inKnapsackPosItems).sum().dataSync()[0];
     });
   }
 

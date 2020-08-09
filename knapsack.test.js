@@ -15,7 +15,7 @@ describe("knapsack", () => {
     });
   });
   describe("value", () => {
-    it("returns zero if the knapsack is over", () => {
+    it("doesn't reward more if budget is over", () => {
       const knapsack = new Knapsack();
       knapsack.setRandomState();
       const [costPosItems, valuePosItems, inKnapsackPosItems] = tf.unstack(
@@ -30,7 +30,7 @@ describe("knapsack", () => {
         ],
         1
       );
-      expect(knapsack.value()).toBe(0);
+      expect(knapsack.value()).toBeLessThan(valuePosItems.sum().dataSync()[0]);
     });
     it("returns the value in the knapsack", () => {
       const knapsack = new Knapsack();
@@ -47,7 +47,7 @@ describe("knapsack", () => {
         ],
         1
       );
-      expect(knapsack.value()).toMatchInlineSnapshot(`0.5881654620170593`);
+      expect(knapsack.value()).toMatchInlineSnapshot(`0`);
     });
   });
 });
