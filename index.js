@@ -127,8 +127,10 @@ export class PolicyNetwork {
         // network's weights with respect to the probability of the action
         // choice that lead to the reward.
 
-        // Add current state to history and remove oldest
-        knapsackSystem.shiftStateHistory();
+        // Update last n steps of state history
+        const inputTensor = knapsackSystem.getStateTensor();
+        tf.dispose(knapsackSystem.stateHistory.shift());
+        knapsackSystem.stateHistory.push(inputTensor);
 
         const gradients = tf.tidy(() => {
           const inputTensor = knapsackSystem.getStateHistoryTensor();
@@ -137,7 +139,7 @@ export class PolicyNetwork {
 
         this.pushGradients(gameGradients, gradients);
         const action = this.currentActions_;
-        const isDone = knapsackSystem.rewindAndUpdateAll(action);
+        const isDone = knapsackSystem.update(action);
 
         await maybeRenderDuringTraining(knapsackSystem);
 
@@ -185,7 +187,7 @@ export class PolicyNetwork {
     const f = () =>
       tf.tidy(() => {
         const [logits, actions] = this.getLogitsAndActions(inputTensor);
-        this.currentActions_ = actions.arraySync();
+        this.currentActions_ = actions.slice(actions.shape[0] - 1).dataSync();
         const labels = tf.sub(
           1,
           tf.tensor2d(actions.dataSync(), actions.shape)

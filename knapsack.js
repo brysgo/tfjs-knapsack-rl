@@ -48,29 +48,13 @@ export class Knapsack {
     this.setRandomState();
   }
 
-  /**
-   * Make sure we have some state history on first run
-   */
   padStateHistory() {
     if (this.stateHistory) throw new Error("state history already set");
     this.stateHistory = [];
-    this.cursorHistory = [];
     Array.from({ length: this.historySize }).forEach(() => {
       this.updateRandom();
       this.stateHistory.push(this.getStateTensor());
-      this.cursorHistory.push({ ...this.cursor });
     });
-  }
-
-  /**
-   * Add current state to history and remove oldest
-   */
-  shiftStateHistory() {
-    const inputTensor = this.getStateTensor();
-    tf.dispose(this.stateHistory.shift());
-    this.stateHistory.push(inputTensor);
-    const cursor = this.cursor;
-    this.cursorHistory.push({ ...cursor }); // clone cursor so it isn't the same object
   }
 
   /**
@@ -214,17 +198,6 @@ export class Knapsack {
         .sum()
         .dataSync()[0];
     });
-  }
-
-  /**
-   * Our update function only runs the current step
-   *
-   * but we want to redo all of history
-   */
-  rewindAndUpdateAll(updateArgs) {
-    this.cursor = this.cursorHistory.shift();
-    this.cursorHistory = [];
-    updateArgs.map((args) => this.update(args));
   }
 
   /**
