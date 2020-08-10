@@ -104,8 +104,8 @@ export class Knapsack {
               [0, this.items.shape[0] - this.cursor.index],
               [0, 0],
             ]),
-            pad(this.items.slice(this.cursor.index), [
-              [this.cursor.index, 0],
+            pad(this.items.slice(this.cursor.index + 1), [
+              [this.cursor.index + 1, 0],
               [0, 0],
             ]),
           ].map((itemsPos) => {
@@ -152,36 +152,38 @@ export class Knapsack {
    *   A flipProb < 0 leads to leaving the item's state as is
    */
   update([probLeft, flipProb]) {
-    const leftOnTrueRightOnFalse = probLeft > 0;
-    const flipOnTrue = flipProb > 0;
+    return tf.tidy(() => {
+      const leftOnTrueRightOnFalse = probLeft > 0;
+      const flipOnTrue = flipProb > 0;
 
-    const numItems = this.items.shape[0];
+      const numItems = this.items.shape[0];
 
-    if (flipOnTrue) {
-      this.idleCount = 0;
-      const itemBuffer = this.items.bufferSync();
-      const newState = !itemBuffer.get(this.cursor.index, 2);
-      itemBuffer.set(newState, this.cursor.index, 2);
-    } else {
-      this.idleCount++;
-    }
+      if (flipOnTrue) {
+        this.idleCount = 0;
+        const itemBuffer = this.items.bufferSync();
+        const newState = !itemBuffer.get(this.cursor.index, 2);
+        itemBuffer.set(newState, this.cursor.index, 2);
+      } else {
+        this.idleCount++;
+      }
 
-    let stride;
-    if (this.cursor.stride >= 2) {
-      stride = this.cursor.stride;
-    } else {
-      stride = Math.floor(numItems / 2);
-      this.cursor.index = Math.floor(numItems / 2);
-    }
-    stride = Math.floor(stride / 2);
-    if (leftOnTrueRightOnFalse) {
-      // flip stride sign to go left
-      stride = -stride;
-    }
-    this.cursor.index = this.cursor.index + stride;
-    this.cursor.stride = Math.abs(stride);
+      let stride;
+      if (this.cursor.stride >= 2) {
+        stride = this.cursor.stride;
+      } else {
+        stride = Math.floor(numItems / 2);
+        this.cursor.index = Math.floor(numItems / 2);
+      }
+      stride = Math.floor(stride / 2);
+      if (leftOnTrueRightOnFalse) {
+        // flip stride sign to go left
+        stride = -stride;
+      }
+      this.cursor.index = this.cursor.index + stride;
+      this.cursor.stride = Math.abs(stride);
 
-    return this.isDone();
+      return this.isDone();
+    });
   }
 
   value() {

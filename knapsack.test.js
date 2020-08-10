@@ -1,7 +1,6 @@
 import * as tf from "./tensorflow";
 import { Knapsack } from "./knapsack";
 import "./tensorflowMatchers";
-import { onesLike } from "@tensorflow/tfjs";
 
 Math.seedrandom("deterministic test results");
 
