@@ -187,10 +187,10 @@ export class PolicyNetwork {
     const f = () =>
       tf.tidy(() => {
         const [logits, actions] = this.getLogitsAndActions(inputTensor);
-        this.currentActions_ = actions.dataSync();
+        this.currentActions_ = actions.slice(actions.shape[0] - 1).dataSync();
         const labels = tf.sub(
           1,
-          tf.tensor2d(this.currentActions_, actions.shape)
+          tf.tensor2d(actions.dataSync(), actions.shape)
         );
         return tf.losses.sigmoidCrossEntropy(labels, logits).asScalar();
       });
