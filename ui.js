@@ -403,7 +403,6 @@ export async function setUpUI() {
     disableModelControls();
     let isDone = false;
     const knapsack = new Knapsack(true);
-    knapsack.setRandomState();
     let steps = 0;
     stopRequested = false;
     while (!isDone) {

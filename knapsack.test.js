@@ -17,7 +17,6 @@ describe("knapsack", () => {
   describe("value", () => {
     it("doesn't reward more if budget is over", () => {
       const knapsack = new Knapsack();
-      knapsack.setRandomState();
       const [costPosItems, valuePosItems, inKnapsackPosItems] = tf.unstack(
         knapsack.items,
         1
@@ -34,7 +33,6 @@ describe("knapsack", () => {
     });
     it("returns the value in the knapsack", () => {
       const knapsack = new Knapsack();
-      knapsack.setRandomState();
       const [costPosItems, valuePosItems, inKnapsackPosItems] = tf.unstack(
         knapsack.items,
         1

@@ -14,7 +14,6 @@ describe("getLogitsAndActions", () => {
     let input, policyNetwork;
     try {
       const knapsack = new Knapsack();
-      knapsack.setRandomState();
       input = knapsack.getStateTensor();
       policyNetwork = new PolicyNetwork([128]);
     } catch (e) {
@@ -32,7 +31,6 @@ describe("policyNet", () => {
     let input, policyNetwork;
     try {
       const knapsack = new Knapsack();
-      knapsack.setRandomState();
       input = knapsack.getStateTensor();
       policyNetwork = new PolicyNetwork([128]);
     } catch (e) {
@@ -49,7 +47,6 @@ describe("policyNet", () => {
     let input, knapsack, policyNetwork;
     try {
       knapsack = new Knapsack();
-      knapsack.setRandomState();
       input = knapsack.getStateTensor();
       policyNetwork = new PolicyNetwork([128]);
     } catch (e) {
