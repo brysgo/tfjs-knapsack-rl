@@ -1,6 +1,8 @@
 /**
  * @license
- * Copyright 2018 Google LLC. All Rights Reserved.
+ * Copyright 2020 Bryan Goldstein. All Rights Reserved.
+ *
+ * Based on example that is copyright 2018 Google LLC. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,22 +18,11 @@
  */
 
 /**
- * TensorFlow.js Reinforcement Learning Example: Balancing a Knapsack System.
+ * TensorFlow.js Reinforcement Learning Example: Optimizing a Knapsack System.
  *
  * The simulation, training, testing and visualization parts are written
  * purely in JavaScript and can run in the web browser with WebGL acceleration.
  *
- * This reinforcement learning (RL) problem was proposed in:
- *
- * - Barto, Sutton, and Anderson, "Neuronlike Adaptive Elements That Can Solve
- *   Difficult Learning Control Problems," IEEE Trans. Syst., Man, Cybern.,
- *   Vol. SMC-13, pp. 834--846, Sept.--Oct. 1983
- * - Sutton, "Temporal Aspects of Credit Assignment in Reinforcement Learning",
- *   Ph.D. Dissertation, Department of Computer and Information Science,
- *   University of Massachusetts, Amherst, 1984.
- *
- * It later became one of OpenAI's gym environmnets:
- *   https://github.com/openai/gym/blob/master/gym/envs/classic_control/cartpole.py
  */
 
 import * as tf from "./tensorflow";
@@ -129,6 +120,7 @@ export class PolicyNetwork {
       const gameRewards = [];
       const gameGradients = [];
       for (let j = 0; j < maxStepsPerGame; ++j) {
+        const valueBefore = knapsackSystem.value();
         // For every step of the game, remember gradients of the policy
         // network's weights with respect to the probability of the action
         // choice that lead to the reward.
@@ -143,7 +135,7 @@ export class PolicyNetwork {
 
         await maybeRenderDuringTraining(knapsackSystem);
 
-        gameRewards.push(knapsackSystem.value());
+        gameRewards.push(knapsackSystem.value() - valueBefore);
         if (isDone) {
           break;
         }
