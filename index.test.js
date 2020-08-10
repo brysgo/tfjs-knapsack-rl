@@ -14,40 +14,39 @@ describe("getLogitsAndActions", () => {
     let input, policyNetwork;
     try {
       const knapsack = new Knapsack();
-      input = knapsack.getStateTensor();
+      input = knapsack.getStateHistoryTensor();
       policyNetwork = new PolicyNetwork([128]);
     } catch (e) {
       // don't fail because of setup
       console.error(e);
     }
-    expect(() =>
-      policyNetwork.getLogitsAndActions(tf.expandDims(input))
-    ).not.toThrow();
+    expect(() => policyNetwork.getLogitsAndActions(input)).not.toThrow();
   });
 });
 
 describe("policyNet", () => {
   it("returns the right dimensions for the output", () => {
-    let input, policyNetwork;
+    let input, policyNetwork, knapsack;
     try {
-      const knapsack = new Knapsack();
-      input = knapsack.getStateTensor();
+      knapsack = new Knapsack();
+      input = knapsack.getStateHistoryTensor();
       policyNetwork = new PolicyNetwork([128]);
     } catch (e) {
       // don't fail because of setup
       console.error(e);
     }
     expect(policyNetwork.policyNet.outputs[0].shape).toEqual([null, 2]);
-    expect(
-      policyNetwork.policyNet.predict(tf.expandDims(input)).shape
-    ).toEqual([1, 2]);
+    expect(policyNetwork.policyNet.predict(input).shape).toEqual([
+      knapsack.historySize,
+      2,
+    ]);
   });
 
   it("can train the network without errors", async () => {
     let input, knapsack, policyNetwork;
     try {
       knapsack = new Knapsack();
-      input = knapsack.getStateTensor();
+      input = knapsack.getStateHistoryTensor();
       policyNetwork = new PolicyNetwork([128]);
     } catch (e) {
       // don't fail because of setup

@@ -43,8 +43,18 @@ export class Knapsack {
     this.itemRange = { min: 50, max: 1000 };
     this.costValueMultiplier = 5;
     this.idleThreshold = 10;
+    this.historySize = 20;
 
     this.setRandomState();
+  }
+
+  padStateHistory() {
+    if (this.stateHistory) throw new Error("state history already set");
+    this.stateHistory = [];
+    Array.from({ length: this.historySize }).forEach(() => {
+      this.updateRandom();
+      this.stateHistory.push(this.getStateTensor());
+    });
   }
 
   /**
@@ -76,6 +86,8 @@ export class Knapsack {
     };
     this.treeDepth = Math.floor(Math.log(numItems));
     this.idleCount = 0;
+    this.stateHistory = undefined;
+    this.padStateHistory();
   }
 
   /**
@@ -111,6 +123,19 @@ export class Knapsack {
         )
         .sum(-1);
     });
+  }
+
+  getStateHistoryTensor() {
+    return tf.stack(this.stateHistory);
+  }
+
+  /**
+   * Update the knapsack system using a random action.
+   *
+   * This is useful for padding action history.
+   */
+  updateRandom() {
+    return this.update([Math.random() * 2 - 1, Math.random() * 2 - 1]);
   }
 
   /**

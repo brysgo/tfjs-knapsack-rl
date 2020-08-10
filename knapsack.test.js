@@ -31,7 +31,7 @@ describe("knapsack", () => {
       );
       expect(knapsack.value()).toBeLessThan(valuePosItems.sum().dataSync()[0]);
     });
-    it("returns the value in the knapsack", () => {
+    it("returns the value difference of the knapsack", () => {
       const knapsack = new Knapsack();
       const [costPosItems, valuePosItems, inKnapsackPosItems] = tf.unstack(
         knapsack.items,
@@ -45,7 +45,7 @@ describe("knapsack", () => {
         ],
         1
       );
-      expect(knapsack.value()).toMatchInlineSnapshot(`0`);
+      expect(knapsack.value()).toMatchInlineSnapshot(`0.0030737011693418026`);
     });
   });
 });

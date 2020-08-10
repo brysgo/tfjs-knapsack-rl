@@ -72,10 +72,12 @@ export class PolicyNetwork {
     this.policyNet = tf.sequential();
     hiddenLayerSizes.forEach((hiddenLayerSize, i) => {
       this.policyNet.add(
-        tf.layers.dense({
-          units: hiddenLayerSize,
-          activation: "elu",
+        tf.layers.timeDistributed({
           inputShape: i === 0 ? [2, 2, 2] : undefined,
+          layer: tf.layers.dense({
+            units: hiddenLayerSize,
+            activation: "elu",
+          }),
         })
       );
     });
@@ -124,8 +126,14 @@ export class PolicyNetwork {
         // For every step of the game, remember gradients of the policy
         // network's weights with respect to the probability of the action
         // choice that lead to the reward.
+
+        // Update last n steps of state history
+        const inputTensor = knapsackSystem.getStateTensor();
+        tf.dispose(knapsackSystem.stateHistory.shift());
+        knapsackSystem.stateHistory.push(inputTensor);
+
         const gradients = tf.tidy(() => {
-          const inputTensor = knapsackSystem.getStateTensor();
+          const inputTensor = knapsackSystem.getStateHistoryTensor();
           return this.getGradientsAndSaveActions(inputTensor).grads;
         });
 
@@ -178,9 +186,7 @@ export class PolicyNetwork {
   getGradientsAndSaveActions(inputTensor) {
     const f = () =>
       tf.tidy(() => {
-        const [logits, actions] = this.getLogitsAndActions(
-          tf.expandDims(inputTensor)
-        );
+        const [logits, actions] = this.getLogitsAndActions(inputTensor);
         this.currentActions_ = actions.dataSync();
         const labels = tf.sub(
           1,
@@ -206,23 +212,22 @@ export class PolicyNetwork {
   getLogitsAndActions(inputs) {
     return tf.tidy(() => {
       const logits = this.policyNet.predict(inputs);
-      // Split the actions here because I don't fully understand / want to mess with the sigmoid
-      const [leftLogit, logitFlip] = tf
-        .split(tf.squeeze(logits), 2)
-        .map(tf.expandDims);
-      // Get the probability of the leftward action and that of a flip
-      const leftProb = tf.sigmoid(leftLogit);
-      const probFlip = tf.sigmoid(logitFlip);
-      // Probabilites of the left and right actions.
-      const leftRightProbs = tf.concat([leftProb, tf.sub(1, leftProb)], 1);
-      // Probabilites of flip or no flip
-      const flipNoFlipProbs = tf.concat([probFlip, tf.sub(1, probFlip)], 1);
-      const actions = tf.concat(
-        [
-          tf.multinomial(leftRightProbs, 1, null, true),
-          tf.multinomial(flipNoFlipProbs, 1, null, true),
-        ],
-        1
+      const perRunLogits = logits.unstack();
+      const actions = tf.stack(
+        perRunLogits.map((currentLogits) => {
+          const [leftLogit, logitFlip] = tf.split(currentLogits, 2);
+          // Get the probability of the leftward action and that of a flip
+          const leftProb = tf.sigmoid(leftLogit);
+          const probFlip = tf.sigmoid(logitFlip);
+          // Probabilites of the left and right actions.
+          const leftRightProbs = tf.concat([leftProb, tf.sub(1, leftProb)]);
+          // Probabilites of flip or no flip
+          const flipNoFlipProbs = tf.concat([probFlip, tf.sub(1, probFlip)]);
+          return tf.concat([
+            tf.multinomial(leftRightProbs, 1, null, true),
+            tf.multinomial(flipNoFlipProbs, 1, null, true),
+          ]);
+        })
       );
       return [logits, actions];
     });
@@ -236,9 +241,7 @@ export class PolicyNetwork {
    *   `batchSize`.
    */
   getActions(inputs) {
-    const result = this.getLogitsAndActions(
-      tf.expandDims(inputs)
-    )[1].dataSync();
+    const result = this.getLogitsAndActions(inputs)[1].dataSync();
     return result;
   }
 
