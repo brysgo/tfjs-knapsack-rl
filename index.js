@@ -73,7 +73,7 @@ export class PolicyNetwork {
     hiddenLayerSizes.forEach((hiddenLayerSize, i) => {
       this.policyNet.add(
         tf.layers.timeDistributed({
-          inputShape: i === 0 ? [2, 2, 2] : undefined,
+          inputShape: i === 0 ? [2, 2, 3] : undefined,
           layer: tf.layers.dense({
             units: hiddenLayerSize,
             activation: "elu",
@@ -204,7 +204,7 @@ export class PolicyNetwork {
   /**
    * Get policy-network logits and the action based on state-tensor inputs.
    *
-   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 2]`.
+   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 3]`.
    * @returns {[tf.Tensor, tf.Tensor]}
    *   1. The logits tensor, of shape `[batchSize, 2]`.
    *   2. The actions tensor, of shape `[batchSize, 2]`.
@@ -236,7 +236,7 @@ export class PolicyNetwork {
   /**
    * Get actions based on a state-tensor input.
    *
-   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 2]`.
+   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 3]`.
    * @param {Float32Array} inputs The actions for the inputs, with length
    *   `batchSize`.
    */

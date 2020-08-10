@@ -243,7 +243,7 @@ function renderKnapsack(knapsack, canvas) {
     context,
     100,
     50,
-    500,
+    400,
     100,
     values,
     totalValueIn + totalValueOut,
@@ -253,13 +253,13 @@ function renderKnapsack(knapsack, canvas) {
     context,
     100,
     150,
-    500,
+    400,
     100,
     costs,
     totalCostIn + totalCostOut,
     maxCost
   );
-  drawStackedBar(context, 100, 250, 500, 100, rois, totalROI, maxROI);
+  drawStackedBar(context, 100, 250, 400, 100, rois, totalROI, maxROI);
 
   context.fillText("score", 10, 400);
   context.fillText(knapsack.value(), 100, 400);

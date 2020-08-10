@@ -11,7 +11,7 @@ describe("knapsack", () => {
       const knapsack = new Knapsack();
       let state;
       expect(() => (state = knapsack.getStateTensor())).not.toThrow();
-      expect(state.shape).toEqual([2, 2, 2]);
+      expect(state.shape).toEqual([2, 2, 3]);
     });
   });
   describe("value", () => {

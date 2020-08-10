@@ -25,7 +25,7 @@ import { pad } from "./utils";
 /**
  * Knapsack system simulator.
  *
- * The state is a tensor of shape [2, 2, 2]:
+ * The state is a tensor of shape [2, 2, 3]:
  *
  * [left/right, in/out, cost/value)]
  *
@@ -41,7 +41,7 @@ export class Knapsack {
   constructor() {
     // Constants that characterize the system.
     this.itemRange = { min: 50, max: 1000 };
-    this.costValueMultiplier = 5;
+    this.costValueMultiplier = 10;
     this.idleThreshold = 10;
     this.historySize = 20;
 
@@ -75,7 +75,7 @@ export class Knapsack {
             0,
             this.costValueMultiplier / numItems
           ),
-          tf.zeros([numItems, 1]), // keep this zero for better reward
+          tf.randomUniform([numItems, 1]).greater(0.5),
         ],
         1
       )
@@ -114,7 +114,12 @@ export class Knapsack {
               valuePosItems,
               inKnapsackPosItems,
             ] = tf.unstack(itemsPos, 1);
-            const valueCostPos = tf.stack([costPosItems, valuePosItems]);
+            const roiPosItems = valuePosItems.div(costPosItems);
+            const valueCostPos = tf.stack([
+              costPosItems,
+              valuePosItems,
+              roiPosItems,
+            ]);
             return tf.stack([
               tf.mul(valueCostPos, inKnapsackPosItems),
               tf.mul(valueCostPos, tf.scalar(1).sub(inKnapsackPosItems)),
