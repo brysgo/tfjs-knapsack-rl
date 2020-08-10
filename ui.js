@@ -413,7 +413,7 @@ export async function setUpUI() {
           `Test in progress. ` +
             `Action: ${action === 1 ? "<--" : " -->"} (Step ${steps})`
         );
-        isDone = knapsack.update(action);
+        isDone = knapsack.rewindAndUpdateAll(action);
         renderKnapsack(knapsack, knapsackCanvas);
       });
       await tf.nextFrame(); // Unblock UI thread.
