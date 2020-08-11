@@ -72,12 +72,10 @@ export class PolicyNetwork {
     this.policyNet = tf.sequential();
     hiddenLayerSizes.forEach((hiddenLayerSize, i) => {
       this.policyNet.add(
-        tf.layers.timeDistributed({
+        tf.layers.dense({
+          units: hiddenLayerSize,
+          activation: "elu",
           inputShape: i === 0 ? [2, 2, 3] : undefined,
-          layer: tf.layers.dense({
-            units: hiddenLayerSize,
-            activation: "elu",
-          }),
         })
       );
     });
