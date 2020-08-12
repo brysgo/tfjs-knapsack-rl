@@ -131,11 +131,6 @@ export class PolicyNetwork {
         // network's weights with respect to the probability of the action
         // choice that lead to the reward.
 
-        // Update last n steps of state history
-        const inputTensor = knapsackSystem.getStateTensor();
-        tf.dispose(knapsackSystem.stateHistory.shift());
-        knapsackSystem.stateHistory.push(inputTensor);
-
         const gradients = tf.tidy(() => {
           const inputTensor = knapsackSystem.getStateTensor();
           return this.getGradientsAndSaveActions(inputTensor).grads;

@@ -48,15 +48,6 @@ export class Knapsack {
     this.setRandomState();
   }
 
-  padStateHistory() {
-    if (this.stateHistory) throw new Error("state history already set");
-    this.stateHistory = [];
-    Array.from({ length: this.historySize }).forEach(() => {
-      this.updateRandom();
-      this.stateHistory.push(this.getStateTensor());
-    });
-  }
-
   /**
    * Set the state of the knapsack system randomly.
    */
@@ -90,8 +81,6 @@ export class Knapsack {
     };
     this.treeDepth = Math.floor(Math.log(numItems));
     this.idleCount = 0;
-    this.stateHistory = undefined;
-    this.padStateHistory();
   }
 
   /**
@@ -152,10 +141,6 @@ export class Knapsack {
         )
         .sum(-1);
     });
-  }
-
-  getStateHistoryTensor() {
-    return tf.stack(this.stateHistory);
   }
 
   /**
