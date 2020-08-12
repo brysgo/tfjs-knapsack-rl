@@ -97,6 +97,17 @@ export class Knapsack {
    */
   getStateTensor() {
     return tf.tidy(() => {
+      const expDistanceFromCursor = tf.exp(
+        tf.concat([
+          this.cursor.index > 0
+            ? tf.linspace(0, 1, this.cursor.index)
+            : tf.zeros([0]),
+          this.cursor.index < this.items.shape[0]
+            ? tf.linspace(1, 0, this.items.shape[0] - this.cursor.index)
+            : tf.zeros([0]),
+        ])
+      );
+      const itemOnes = tf.ones([this.items.shape[0]]);
       return tf
         .stack(
           [
@@ -115,10 +126,13 @@ export class Knapsack {
               inKnapsackPosItems,
             ] = tf.unstack(itemsPos, 1);
             const roiPosItems = valuePosItems.div(costPosItems);
+            const distanceAdjustedROI = expDistanceFromCursor.mul(roiPosItems);
             const valueCostPos = tf.stack([
               costPosItems,
               valuePosItems,
               roiPosItems,
+              distanceAdjustedROI,
+              itemOnes,
             ]);
             return tf.stack([
               tf.mul(valueCostPos, inKnapsackPosItems),
@@ -151,39 +165,37 @@ export class Knapsack {
    *   A flipProb > 0 leads to flipping the item's in backpack state
    *   A flipProb < 0 leads to leaving the item's state as is
    */
-  update([probLeft, flipProb]) {
-    return tf.tidy(() => {
-      const leftOnTrueRightOnFalse = probLeft > 0;
-      const flipOnTrue = flipProb > 0;
+  update([probLeft, probIn]) {
+    const leftOnTrueRightOnFalse = probLeft > 0;
+    const inKnapsackOnTrue = probIn > 0;
 
-      const numItems = this.items.shape[0];
+    const numItems = this.items.shape[0];
 
-      if (flipOnTrue) {
-        this.idleCount = 0;
-        const itemBuffer = this.items.bufferSync();
-        const newState = !itemBuffer.get(this.cursor.index, 2);
-        itemBuffer.set(newState, this.cursor.index, 2);
-      } else {
-        this.idleCount++;
-      }
+    const itemBuffer = this.items.bufferSync();
+    const oldState = itemBuffer.get(this.cursor.index, 2);
+    itemBuffer.set(inKnapsackOnTrue, this.cursor.index, 2);
+    if (oldState === inKnapsackOnTrue) {
+      this.idleCount++;
+    } else {
+      this.idleCount = 0;
+    }
 
-      let stride;
-      if (this.cursor.stride >= 2) {
-        stride = this.cursor.stride;
-      } else {
-        stride = Math.floor(numItems / 2);
-        this.cursor.index = Math.floor(numItems / 2);
-      }
-      stride = Math.floor(stride / 2);
-      if (leftOnTrueRightOnFalse) {
-        // flip stride sign to go left
-        stride = -stride;
-      }
-      this.cursor.index = this.cursor.index + stride;
-      this.cursor.stride = Math.abs(stride);
+    let stride;
+    if (this.cursor.stride >= 2) {
+      stride = this.cursor.stride;
+    } else {
+      stride = Math.floor(numItems / 2);
+      this.cursor.index = Math.floor(numItems / 2);
+    }
+    stride = Math.floor(stride / 2);
+    if (leftOnTrueRightOnFalse) {
+      // flip stride sign to go left
+      stride = -stride;
+    }
+    this.cursor.index = this.cursor.index + stride;
+    this.cursor.stride = Math.abs(stride);
 
-      return this.isDone();
-    });
+    return this.isDone();
   }
 
   value() {

@@ -75,7 +75,7 @@ export class PolicyNetwork {
         tf.layers.dense({
           units: hiddenLayerSize,
           activation: "elu",
-          inputShape: i === 0 ? [2, 2, 3] : undefined,
+          inputShape: i === 0 ? [2, 2, 5] : undefined,
         })
       );
     });
@@ -192,7 +192,9 @@ export class PolicyNetwork {
         );
         return tf.losses.sigmoidCrossEntropy(labels, logits).asScalar();
       });
-    return tf.variableGrads(f);
+    const result = tf.variableGrads(f);
+    tf.dispose(f);
+    return result;
   }
 
   getCurrentActions() {
@@ -202,7 +204,7 @@ export class PolicyNetwork {
   /**
    * Get policy-network logits and the action based on state-tensor inputs.
    *
-   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 3]`.
+   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 5]`.
    * @returns {[tf.Tensor, tf.Tensor]}
    *   1. The logits tensor, of shape `[batchSize, 2]`.
    *   2. The actions tensor, of shape `[batchSize, 2]`.
@@ -234,13 +236,17 @@ export class PolicyNetwork {
   /**
    * Get actions based on a state-tensor input.
    *
-   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 3]`.
+   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 5]`.
    * @param {Float32Array} inputs The actions for the inputs, with length
    *   `batchSize`.
    */
   getActions(inputs) {
-    const result = this.getLogitsAndActions(inputs)[1].dataSync();
-    return result;
+    return tf.tidy(() => {
+      const result = this.getLogitsAndActions(
+        tf.expandDims(inputs)
+      )[1].dataSync();
+      return result;
+    });
   }
 
   /**
