@@ -75,7 +75,8 @@ export class PolicyNetwork {
         tf.layers.dense({
           units: hiddenLayerSize,
           activation: "elu",
-          inputShape: i === 0 ? [2, 2, 5] : undefined,
+          kernelInitializer: "glorotNormal",
+          inputShape: i === 0 ? [2, 2, 4] : undefined,
         })
       );
     });
@@ -131,7 +132,8 @@ export class PolicyNetwork {
         knapsackSystem.stateHistory.push(inputTensor);
 
         const gradients = tf.tidy(() => {
-          const inputTensor = knapsackSystem.getStateHistoryTensor();
+          const inputTensor = knapsackSystem.getStateTensor();
+          inputTensor.print();
           return this.getGradientsAndSaveActions(inputTensor).grads;
         });
 
@@ -204,7 +206,7 @@ export class PolicyNetwork {
   /**
    * Get policy-network logits and the action based on state-tensor inputs.
    *
-   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 5]`.
+   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 4]`.
    * @returns {[tf.Tensor, tf.Tensor]}
    *   1. The logits tensor, of shape `[batchSize, 2]`.
    *   2. The actions tensor, of shape `[batchSize, 2]`.
@@ -236,7 +238,7 @@ export class PolicyNetwork {
   /**
    * Get actions based on a state-tensor input.
    *
-   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 5]`.
+   * @param {tf.Tensor} inputs A tf.Tensor instance of shape `[batchSize, 2, 2, 4]`.
    * @param {Float32Array} inputs The actions for the inputs, with length
    *   `batchSize`.
    */
@@ -382,12 +384,18 @@ function discountRewards(rewards, discountRate) {
 function discountAndNormalizeRewards(rewardSequences, discountRate) {
   return tf.tidy(() => {
     const discounted = [];
+    let sum = 0;
     for (const sequence of rewardSequences) {
+      sum += sequence;
       discounted.push(discountRewards(sequence, discountRate));
+    }
+    if (sum === 0) {
+      return tf.zerosLike(discounted);
     }
     // Compute the overall mean and stddev.
     const concatenated = tf.concat(discounted);
     const mean = tf.mean(concatenated);
+    // Preserve sign
     const std = tf.sqrt(tf.mean(tf.square(concatenated.sub(mean))));
     // Normalize the reward sequences using the mean and std.
     const normalized = discounted.map((rs) => rs.sub(mean).div(std));

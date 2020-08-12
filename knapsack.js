@@ -65,7 +65,7 @@ export class Knapsack {
     const numItems = Math.floor(
       this.itemRange.min + Math.random() * this.itemRange.max
     );
-    // [numberOfItems, (cost, value,inKnapsack)]
+    // [numberOfItems, (cost, value,inKnapsack, visitCount)]
     tf.dispose(this.items);
     this.items = tf.tidy(() =>
       tf.concat(
@@ -75,11 +75,15 @@ export class Knapsack {
             0,
             this.costValueMultiplier / numItems
           ),
-          tf.randomUniform([numItems, 1]).greater(0.5),
+          tf.zeros([numItems, 2]), // keep this zero for better reward
         ],
         1
       )
     );
+    tf.dispose(this.normalization);
+    this.normalization = {
+      visitCounter: 0,
+    };
     this.cursor = {
       index: 0, // index of cursor in list
       stride: 0, // track depth of cursor in virtual tree
@@ -108,6 +112,10 @@ export class Knapsack {
         ])
       );
       const itemOnes = tf.ones([this.items.shape[0]]);
+      const [costItems, valueItems] = tf.unstack(this.items, 1);
+      const roiItems = valueItems.div(costItems);
+
+      const distanceAdjustedROI = expDistanceFromCursor.mul(roiItems);
       return tf
         .stack(
           [
@@ -124,15 +132,17 @@ export class Knapsack {
               costPosItems,
               valuePosItems,
               inKnapsackPosItems,
+              visitCounter,
             ] = tf.unstack(itemsPos, 1);
             const roiPosItems = valuePosItems.div(costPosItems);
-            const distanceAdjustedROI = expDistanceFromCursor.mul(roiPosItems);
+            const distanceAdjustedPosROI = expDistanceFromCursor.mul(
+              roiPosItems
+            );
             const valueCostPos = tf.stack([
-              costPosItems,
-              valuePosItems,
-              roiPosItems,
-              distanceAdjustedROI,
-              itemOnes,
+              roiPosItems.div(roiItems.sum()),
+              distanceAdjustedPosROI.div(distanceAdjustedROI.sum()),
+              itemOnes.div(this.items.shape[0]),
+              visitCounter.div(this.normalization.visitCounter),
             ]);
             return tf.stack([
               tf.mul(valueCostPos, inKnapsackPosItems),
@@ -174,6 +184,12 @@ export class Knapsack {
     const itemBuffer = this.items.bufferSync();
     const oldState = itemBuffer.get(this.cursor.index, 2);
     itemBuffer.set(inKnapsackOnTrue, this.cursor.index, 2);
+    this.normalization.visitCounter++;
+    itemBuffer.set(
+      itemBuffer.get(this.cursor.index, 3) + 1,
+      this.cursor.index,
+      3
+    );
     if (oldState === inKnapsackOnTrue) {
       this.idleCount++;
     } else {
