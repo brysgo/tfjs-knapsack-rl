@@ -133,7 +133,6 @@ export class PolicyNetwork {
 
         const gradients = tf.tidy(() => {
           const inputTensor = knapsackSystem.getStateTensor();
-          inputTensor.print();
           return this.getGradientsAndSaveActions(inputTensor).grads;
         });
 
@@ -213,7 +212,7 @@ export class PolicyNetwork {
    */
   getLogitsAndActions(inputs) {
     return tf.tidy(() => {
-      const logits = this.policyNet.predict(inputs);
+      const logits = this.policyNet.predict(inputs.expandDims());
       const perRunLogits = logits.unstack();
       const actions = tf.stack(
         perRunLogits.map((currentLogits) => {

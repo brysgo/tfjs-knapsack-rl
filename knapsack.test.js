@@ -44,7 +44,7 @@ describe("knapsack", () => {
         ],
         1
       );
-      expect(knapsack.value()).toMatchInlineSnapshot(`0.0030737011693418026`);
+      expect(knapsack.value()).toMatchInlineSnapshot(`0.006147402338683605`);
     });
   });
 });
