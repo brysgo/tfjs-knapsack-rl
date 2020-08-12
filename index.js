@@ -70,13 +70,18 @@ export class PolicyNetwork {
     }
 
     this.policyNet = tf.sequential();
+    this.policyNet.add(
+      tf.layers.gaussianDropout({
+        inputShape: [2, 2, 4],
+      })
+    );
     hiddenLayerSizes.forEach((hiddenLayerSize, i) => {
       this.policyNet.add(
         tf.layers.dense({
           units: hiddenLayerSize,
           activation: "elu",
           kernelInitializer: "glorotNormal",
-          inputShape: i === 0 ? [2, 2, 4] : undefined,
+          inputShape: i === -1 ? [2, 2, 4] : undefined,
         })
       );
     });
@@ -243,9 +248,7 @@ export class PolicyNetwork {
    */
   getActions(inputs) {
     return tf.tidy(() => {
-      const result = this.getLogitsAndActions(
-        tf.expandDims(inputs)
-      )[1].dataSync();
+      const result = this.getLogitsAndActions(inputs)[1].dataSync();
       return result;
     });
   }

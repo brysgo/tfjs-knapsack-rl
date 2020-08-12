@@ -42,7 +42,7 @@ export class Knapsack {
     // Constants that characterize the system.
     this.itemRange = { min: 50, max: 1000 };
     this.costValueMultiplier = 10;
-    this.idleThreshold = 10;
+    this.idleThreshold = 2;
     this.historySize = 20;
 
     this.setRandomState();
@@ -190,7 +190,7 @@ export class Knapsack {
       this.cursor.index,
       3
     );
-    if (oldState === inKnapsackOnTrue) {
+    if (!!oldState === !!inKnapsackOnTrue) {
       this.idleCount++;
     } else {
       this.idleCount = 0;
