@@ -42,7 +42,7 @@ export class Knapsack {
     // Constants that characterize the system.
     this.itemRange = { min: 50, max: 1000 };
     this.costValueMultiplier = 10;
-    this.idleThreshold = 2;
+    this.idleThreshold = 5;
     this.historySize = 20;
 
     this.setRandomState();
@@ -141,15 +141,6 @@ export class Knapsack {
         )
         .sum(-1);
     });
-  }
-
-  /**
-   * Update the knapsack system using a random action.
-   *
-   * This is useful for padding action history.
-   */
-  updateRandom() {
-    return this.update([Math.random() * 2 - 1, Math.random() * 2 - 1]);
   }
 
   /**

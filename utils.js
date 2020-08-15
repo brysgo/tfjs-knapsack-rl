@@ -54,3 +54,17 @@ export function pad(x, paddings, constantValue = 0) {
     }
   });
 }
+
+const numTensorsByTag = {};
+export function detectMemoryLeak(tag, delta = 0) {
+  if (numTensorsByTag[tag] === undefined) {
+    numTensorsByTag[tag] = tf.memory().numTensors;
+  } else {
+    if (tf.memory().numTensors > numTensorsByTag[tag] + delta) {
+      console.log({ numTensorsByTag });
+      console.log(tf.memory());
+      throw new Error("memory leak detected at tag: " + tag);
+    }
+    delete numTensorsByTag[tag];
+  }
+}

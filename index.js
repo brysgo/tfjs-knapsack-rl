@@ -29,6 +29,10 @@ import * as tf from "./tensorflow";
 
 import { maybeRenderDuringTraining, onGameEnd, setUpUI } from "./ui";
 
+import { detectMemoryLeak } from "./utils";
+
+tf.setBackend("cpu");
+
 /**
  * Policy network for controlling the knapsack system.
  *
@@ -122,25 +126,40 @@ export class PolicyNetwork {
     for (let i = 0; i < numGames; ++i) {
       // Randomly initialize the state of the knapsack system at the beginning
       // of every game.
+      detectMemoryLeak("around set random state");
       knapsackSystem.setRandomState();
+      detectMemoryLeak("around set random state");
       const gameRewards = [];
       const gameGradients = [];
       for (let j = 0; j < maxStepsPerGame; ++j) {
+        detectMemoryLeak("around getting value");
         const valueBefore = knapsackSystem.value();
+        detectMemoryLeak("around getting value");
+
         // For every step of the game, remember gradients of the policy
         // network's weights with respect to the probability of the action
         // choice that lead to the reward.
-
+        detectMemoryLeak("around getting gradients");
         const gradients = tf.tidy(() => {
           const inputTensor = knapsackSystem.getStateTensor();
           return this.getGradientsAndSaveActions(inputTensor).grads;
         });
+        detectMemoryLeak(
+          "around getting gradients",
+          Object.keys(gradients).length
+        );
 
+        detectMemoryLeak("around push gradients");
         this.pushGradients(gameGradients, gradients);
+        detectMemoryLeak("around push gradients");
         const action = this.currentActions_;
+        detectMemoryLeak("around update");
         const isDone = knapsackSystem.update(action);
+        detectMemoryLeak("around update");
 
+        detectMemoryLeak("around render");
         await maybeRenderDuringTraining(knapsackSystem);
+        detectMemoryLeak("around render");
 
         gameRewards.push(knapsackSystem.value() - valueBefore);
         if (isDone) {
@@ -193,8 +212,12 @@ export class PolicyNetwork {
         );
         return tf.losses.sigmoidCrossEntropy(labels, logits).asScalar();
       });
+    detectMemoryLeak("getGradientsAndSaveActions");
     const result = tf.variableGrads(f);
-    tf.dispose(f);
+    detectMemoryLeak(
+      "getGradientsAndSaveActions",
+      Object.keys(result.grads).length + 1
+    );
     return result;
   }
 
@@ -212,7 +235,9 @@ export class PolicyNetwork {
    */
   getLogitsAndActions(inputs) {
     return tf.tidy(() => {
-      const logits = this.policyNet.predict(inputs.expandDims());
+      const expandedInput = inputs.expandDims();
+      this.policyNet.predict(expandedInput);
+      const logits = this.policyNet.predict(expandedInput);
       const perRunLogits = logits.unstack();
       const actions = tf.stack(
         perRunLogits.map((currentLogits) => {
