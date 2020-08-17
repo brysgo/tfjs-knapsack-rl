@@ -1,3 +1,8 @@
+# This is a learning project for me adopted from the cartpole example
+
+I still don't have this working well yet, but will attempt to tweak it until it works or until I lose interest.
+
+
 # TensorFlow.js Example: Reinforcement Learning with Knapsack Simulation
 
 ![Cart Pole Demo](./tfjs-knapsack-demo.png)
